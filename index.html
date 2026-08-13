@@ -335,8 +335,8 @@ const FIREBASE_CONFIG = {
 
 // 유틸리티 런처 링크. 같은 저장소 파일은 상대경로, 다른 저장소는 전체 주소.
 const TOOLS = [
-  {n:'근무시간 장부',    d:'출퇴근 · 수당',   href:'index.html'},
-  {n:'일일 업무 기록부', d:'할일 · 히스토리', href:'todo.html'},
+  {n:'근무시간 장부',    d:'출퇴근 · 수당',   href:'https://doop2424.github.io/worklog/'},
+  {n:'일일 업무 기록부', d:'할일 · 히스토리', href:'https://doop2424.github.io/worklog/todo.html'},
   {n:'메뉴얼 입력 틀',   d:'캡쳐 + 설명',     href:'https://doop2424.github.io/Manual-Create/'}
 ];
 
@@ -633,7 +633,7 @@ function renderPunch(){
       <div class="kv" style="border-top:1px solid var(--rule2);margin-top:5px;padding-top:6px">
         <span>근무</span><b>${shown != null ? `${Math.floor(shown/60)}h ${pad(shown%60)}m${mins == null ? ' (진행중)' : ''}` : '—'}</b></div>
     </div>
-    <a class="foot" href="index.html" target="_blank" rel="noopener">근무시간</a>`;
+    <a class="foot" href="https://doop2424.github.io/worklog/" target="_blank" rel="noopener">근무시간</a>`;
 }
 
 /* ── 미니 캘린더 ──────────────────────────────────────── */
