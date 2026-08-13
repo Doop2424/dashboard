@@ -71,7 +71,8 @@
         border-radius:var(--r);cursor:pointer;font-size:13px}
   .ebtn:hover{background:var(--soft);color:var(--ink)}
 
-  #grid{display:grid;grid-template-columns:repeat(12,1fr);gap:var(--gap);align-items:start}
+  #grid{display:grid;grid-template-columns:repeat(12,1fr);column-gap:var(--gap);row-gap:0;
+       grid-auto-rows:1px;align-items:start}
   .w{background:var(--paper);border:1px solid var(--rule2);border-radius:var(--r);
      display:flex;flex-direction:column;overflow:hidden;position:relative}
   .w > h3{margin:0;padding:10px 13px 8px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;
@@ -119,6 +120,97 @@
            color:var(--ink3);font-size:12.5px;gap:4px;text-align:center}
   .pending .p1{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber)}
   .empty{color:var(--ink3);font-size:13px;padding:6px 0}
+  .attr{font-family:var(--mono);font-size:9px;color:var(--ink3);margin-top:9px;letter-spacing:.04em}
+  .foot{display:block;margin-top:9px;font-size:11.5px;color:var(--ink3);text-decoration:none}
+  .foot:hover{color:var(--blue);text-decoration:underline}
+  .linkish{border:0;background:transparent;color:var(--blue);cursor:pointer;font-size:12px;
+           padding:0 2px;text-decoration:underline}
+  .up{color:var(--tick);font-style:normal;font-size:11.5px}
+  .dn{color:var(--blue);font-style:normal;font-size:11.5px}
+  .mhead{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+         color:var(--ink3);margin:10px 0 3px;border-top:1px solid var(--rule2);padding-top:7px}
+
+  /* 진행중인 업무 현황 */
+  .prow{display:flex;gap:9px;align-items:center;padding:5px 0;font-size:13.5px;border-bottom:1px solid var(--rule2)}
+  .stbadge{flex:none;border:1px solid currentColor;background:transparent;border-radius:2px;
+           font-family:var(--mono);font-size:10px;letter-spacing:.06em;padding:2px 7px;cursor:pointer}
+  .st-todo{color:var(--ink3)} .st-doing{color:var(--blue)}
+  .st-review{color:var(--amber)} .st-done{color:var(--ok)}
+  .ptitle{flex:none;max-width:38%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+  .ptitle:hover{text-decoration:underline}
+  .pnote{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+         color:var(--ink3);font-size:12px;cursor:pointer}
+  .pnote:hover{color:var(--ink2);text-decoration:underline}
+
+  /* 근무시간 카운터 */
+  .clock{font-family:var(--mono);font-size:64px;font-weight:700;letter-spacing:-.03em;text-align:center;
+         padding:10px 0 16px;line-height:1}
+  .clock span{font-size:20px;color:var(--ink3);font-weight:500;margin-left:5px;vertical-align:9px}
+  .plab{border:0;background:transparent;padding:0;cursor:pointer;font-size:13.5px;color:var(--ink2);
+        border-bottom:1px dashed var(--rule)}
+  .plab:hover{color:var(--blue);border-bottom-color:var(--blue)}
+  .plab.set{color:var(--ok);border-bottom-color:transparent}
+  .ptimes .kv b{display:flex;gap:5px;align-items:center;font-family:var(--mono);font-size:12.5px}
+  .ptimes .edit{cursor:pointer;border-bottom:1px dashed var(--rule)}
+  .ptimes .edit:hover{color:var(--blue)}
+
+  /* 명언 */
+  .qen{margin-top:8px;padding-top:8px;border-top:1px solid var(--rule2);
+       font-size:12.5px;line-height:1.6;color:var(--ink2);font-style:italic}
+
+  /* 스트레칭 */
+  .strow{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--rule2)}
+  .strow:last-child{border-bottom:0}
+  .strow.past{opacity:.42}
+  .fig{width:34px;height:34px;flex:none;fill:none;stroke:var(--ink2);stroke-width:2;
+       stroke-linecap:round;stroke-linejoin:round}
+  .fig .acc{stroke:var(--blue)}
+  .fig circle{fill:none}
+  .stx{flex:1;min-width:0}
+  .sthead{font-size:13px;font-weight:600}
+  .sthead .t{font-family:var(--mono);font-size:11px;color:var(--ink3);margin-right:4px}
+  .stdesc{font-size:11.5px;color:var(--ink2);line-height:1.55;margin-top:2px}
+
+  /* 생활영어 */
+  .erow{display:flex;gap:9px;padding:7px 0;border-bottom:1px solid var(--rule2);cursor:pointer}
+  .erow:last-child{border-bottom:0}
+  .erow:hover .een{color:var(--blue)}
+  .erow.saying .een{color:var(--blue)}
+  .enum{font-family:var(--mono);font-size:10px;color:var(--ink3);flex:none;padding-top:3px}
+  .ex{flex:1;min-width:0}
+  .een{font-size:13.5px;font-weight:600;line-height:1.45}
+  .een .spk{font-size:9px;color:var(--ink3);margin-left:5px;font-style:normal}
+  .erow.saying .spk{color:var(--blue)}
+  .eko{font-size:12.5px;color:var(--ink2);margin-top:1px}
+  .enote{font-size:11px;color:var(--ink3);margin-top:2px;line-height:1.5}
+
+  /* 미니 캘린더 */
+  .calhead{display:flex;align-items:center;justify-content:center;gap:10px;font-size:14px;
+           font-weight:600;margin-bottom:8px}
+  .cnav{border:1px solid var(--rule2);background:transparent;border-radius:var(--r);
+        padding:1px 8px;cursor:pointer;color:var(--ink3);font-size:12px}
+  .cnav:hover{color:var(--ink);background:var(--soft)}
+  .calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+  .calgrid .dow{text-align:center;font-size:10.5px;color:var(--ink3);padding-bottom:3px}
+  .cc{min-height:42px;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;
+      font-size:12px;border-radius:3px;cursor:pointer;color:var(--ink2);position:relative;gap:1px;
+      border:1px solid transparent;padding:3px 2px;overflow:hidden}
+  .cc:hover{background:var(--shell2)}
+  .cc.off{visibility:hidden;cursor:default}
+  .cc b{font-weight:inherit;text-align:center;line-height:1.2}
+  .cc.sun,.calgrid .dow.sun{color:var(--tick)}
+  .cc.sat,.calgrid .dow.sat{color:var(--blue)}
+  .cc.today{border-color:var(--tick);font-weight:700}
+  .cc.hasev{background:color-mix(in srgb,var(--blue) 9%,transparent)}
+  .cc.sel{background:var(--ink);color:var(--paper)}
+  .cc.sel b,.cc.sel .cev,.cc.sel .cmore{color:var(--paper)}
+  .cev{font-size:8.5px;font-style:normal;line-height:1.25;color:var(--blue);max-width:100%;
+       overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;padding:0 2px}
+  .cmore{font-family:var(--mono);font-size:8px;font-style:normal;color:var(--ink3);line-height:1;padding:0 2px}
+  .cnav.on{border-color:var(--blue);color:var(--blue)}
+  .cnav:disabled{opacity:.5;cursor:default}
+  .calpanel{margin-top:12px;padding-top:10px;border-top:1px solid var(--rule2)}
+  .cphead{font-size:13px;font-weight:600;margin-bottom:7px}
 
   body.edit .w{border-style:dashed;border-color:var(--rule)}
   body.edit .w:hover{border-color:var(--blue)}
@@ -171,8 +263,8 @@
   .toast.on{opacity:1;transform:translateX(-50%)}
 
   @media (max-width:820px){
-    #grid{grid-template-columns:repeat(2,1fr)}
-    .w{grid-column:span 2 !important}
+    #grid{grid-template-columns:repeat(2,1fr);grid-auto-rows:auto;row-gap:12px}
+    .w{grid-column:span 2 !important;grid-row:auto !important}
     main{padding:14px 14px 50px}
     header{padding:9px 14px}
   }
@@ -248,6 +340,10 @@ const TOOLS = [
   {n:'메뉴얼 입력 틀',   d:'캡쳐 + 설명',     href:'https://doop2424.github.io/Manual-Create/'}
 ];
 
+// 구글 캘린더 연동용 OAuth 클라이언트 ID.
+// Google Cloud Console에서 발급 후 붙여넣으세요. 비워두면 캘린더는 근무기록만 표시합니다.
+const GOOGLE_CLIENT_ID = "829279277226-jf4qen5q812l4tc88lkckjlobi8ceim8.apps.googleusercontent.com";
+
 /* ═════════════════════════════════════════════════════════ */
 
 const app = initializeApp(FIREBASE_CONFIG);
@@ -279,6 +375,10 @@ mq.addEventListener?.('change', () => { if(theme === 'system') applyTheme(); });
 
 /* ── 위젯 목록 ────────────────────────────────────────── */
 const CAT = [
+  {id:'projects',      n:'진행중인 업무 현황', g:'업무', w:12, h:200},
+  {id:'punch',         n:'Clock',             g:'업무', w:3, h:290},
+  {id:'minical',       n:'미니 캘린더',       g:'정보', w:3, h:320},
+  {id:'market',        n:'시세',              g:'시장', w:3, h:320},
   {id:'worklog-entry', n:'오늘의 업무기록',   g:'업무', w:6, h:320},
   {id:'worktime',      n:'근무시간',          g:'업무', w:3, h:160},
   {id:'carryover',     n:'어제 못 끝낸 할일', g:'업무', w:3, h:160},
@@ -298,23 +398,42 @@ const CAT = [
   {id:'quote',         n:'오늘의 명언',       g:'기타', w:3, h:160},
   {id:'history',       n:'역사 속 오늘',      g:'기타', w:3, h:160},
   {id:'stretch',       n:'스트레칭 알림',     g:'기타', w:3, h:160},
+  {id:'english',       n:'오늘의 생활영어',   g:'기타', w:5, h:320},
   {id:'launcher',      n:'유틸리티',          g:'기타', w:12, h:150},
   {id:'custom',        n:'새 위젯 (직접 정의)', g:'기타', w:3, h:180, isNew:true}
 ];
 const BY = Object.fromEntries(CAT.map(w => [w.id, w]));
 const DEFAULT_LAYOUT = [
-  {id:'worklog-entry', w:6, h:340},
-  {id:'worktime',      w:3, h:340},
-  {id:'carryover',     w:3, h:340},
-  {id:'week',          w:4, h:180},
-  {id:'weather',       w:4, h:180},
-  {id:'fx',            w:4, h:180},
+  {id:'projects',      w:12, h:270},
+  {id:'worklog-entry', w:6,  h:290},
+  {id:'carryover',     w:3,  h:290},
+  {id:'punch',         w:3,  h:290},
+  {id:'minical',       w:6,  h:700},
+  {id:'market',        w:3,  h:320},
+  {id:'weather',       w:3,  h:320},
+  {id:'quote',         w:3,  h:320},
+  {id:'stretch',       w:4,  h:320},
+  {id:'english',       w:5,  h:320},
   {id:'launcher',      w:12, h:150}
 ];
+// 직접 정의로 적어두셨던 카드를 실제 위젯으로 옮긴다 (한 번만 동작).
+const MIGRATE = {'새 위젯 1':'english'};
+function migrate(list){
+  let changed = false;
+  const out = list.map(it => {
+    if(it.id === 'custom' && MIGRATE[it.name]){
+      changed = true;
+      return {id:MIGRATE[it.name], w:it.w, h:it.h};
+    }
+    return it;
+  });
+  return {list:out, changed};
+}
 
 /* ── 상태 ─────────────────────────────────────────────── */
 let uid = null;
 let records = {};                                  // worklogs/{uid}.records
+let projects = [];                                 // worklogs/{uid}.projects
 let layout = JSON.parse(JSON.stringify(DEFAULT_LAYOUT));
 let editing = false;
 
@@ -377,16 +496,42 @@ function ensure(ds){
   if(!Array.isArray(records[ds].todos)) records[ds].todos = [];
   return records[ds];
 }
+let projTimer = null;
+function saveProjects(){
+  if(!uid) return;
+  clearTimeout(projTimer);
+  setSync('저장 중…');
+  projTimer = setTimeout(async () => {
+    try{
+      await setDoc(doc(db,'worklogs',uid),
+        { projects, updatedAt: serverTimestamp() }, { merge:true });
+      setSync('동기화됨 ✓');
+    }catch(e){ setSync('저장 실패'); toast('업무 현황 저장 실패'); }
+  }, 700);
+}
+let punchTimer = null;
+function savePunch(ds){
+  if(!uid) return;
+  clearTimeout(punchTimer);
+  setSync('저장 중…');
+  const r = records[ds] || {};
+  const payload = {};
+  if(r.start != null) payload.start = r.start; else payload.start = null;
+  if(r.end != null) payload.end = r.end; else payload.end = null;
+  punchTimer = setTimeout(async () => {
+    try{
+      await setDoc(doc(db,'worklogs',uid),
+        { records:{ [ds]: payload }, updatedAt: serverTimestamp() }, { merge:true });
+      setSync('동기화됨 ✓');
+    }catch(e){ setSync('저장 실패'); toast('근무시간 저장 실패'); }
+  }, 500);
+}
 
 /* ── 위젯 내용 ────────────────────────────────────────── */
 function renderTodos(){
   const ds = todayStr(), r = records[ds] || {}, list = r.todos || [];
   const done = list.filter(t => t.done).length;
-  const wl = worklogLabel(r);
-  let h = wl
-    ? `<div class="strip ${wl.cls}"><b>근무시간 장부</b><span>${esc(wl.text)}</span></div>`
-    : `<div class="strip"><span>근무시간 장부에 아직 출퇴근 기록이 없습니다</span></div>`;
-  h += list.length
+  let h = list.length
     ? list.map(t => `<div class="task${t.done ? ' done' : ''}" data-id="${esc(t.id)}">
         <div class="box" data-act="toggle"></div>
         <div class="x">${esc(t.text)}</div>
@@ -433,11 +578,397 @@ function renderWeek(){
 }
 function renderLauncher(){
   return `<div class="tools">` + TOOLS.map(t =>
-    `<a href="${esc(t.href)}">${esc(t.n)}<span>${esc(t.d)}</span></a>`).join('') + `</div>`;
+    `<a href="${esc(t.href)}" target="_blank" rel="noopener">${esc(t.n)}<span>${esc(t.d)}</span></a>`)
+    .join('') + `</div>`;
 }
+/* ── 진행중인 업무 현황 ───────────────────────────────── */
+const STATUS = [
+  {k:'todo',   n:'대기',   c:'st-todo'},
+  {k:'doing',  n:'진행중', c:'st-doing'},
+  {k:'review', n:'검토중', c:'st-review'},
+  {k:'done',   n:'완료',   c:'st-done'}
+];
+const ST = Object.fromEntries(STATUS.map(s => [s.k, s]));
+function renderProjects(){
+  const list = projects.filter(p => p.status !== 'done');
+  const doneN = projects.length - list.length;
+  let h = list.length
+    ? list.map(p => {
+        const s = ST[p.status] || ST.todo;
+        return `<div class="prow" data-pid="${esc(p.id)}">
+          <button class="stbadge ${s.c}" data-pact="cycle" title="눌러서 상태 변경">${s.n}</button>
+          <span class="ptitle" data-pact="rename" title="눌러서 수정">${esc(p.title)}</span>
+          <span class="pnote" data-pact="note" title="눌러서 메모">${esc(p.note || '메모 +')}</span>
+          <button class="del" data-pact="del" title="삭제">&#10005;</button></div>`;
+      }).join('')
+    : `<div class="empty">진행중인 업무가 없습니다. 아래에 추가하세요.</div>`;
+  h += `<div class="addtodo"><input id="projIn" placeholder="업무명을 입력하고 Enter">
+        <button id="projAdd">추가</button></div>`;
+  if(doneN) h += `<div class="sub" style="margin-top:6px">완료 ${doneN}건은 목록에서 숨겨집니다
+    <button class="linkish" id="projPurge">완료건 비우기</button></div>`;
+  return h;
+}
+
+/* ── 근무시간 카운터 ──────────────────────────────────── */
+function renderPunch(){
+  const ds = todayStr(), r = records[ds] || {};
+  const now = new Date();
+  const mins = minutesOf(r);
+  const live = (r.start && !r.end)
+    ? (() => { const a = String(r.start).split(':').map(Number);
+        let m = (now.getHours()*60 + now.getMinutes()) - (a[0]*60 + (a[1]||0));
+        if(m < 0) m += 1440; return m; })()
+    : null;
+  const shown = mins != null ? mins : live;
+  return `<div class="clock" id="punchClock">${pad(now.getHours())}:${pad(now.getMinutes())}<span>${pad(now.getSeconds())}</span></div>
+    <div class="ptimes">
+      <div class="kv"><button class="plab${r.start ? ' set' : ''}" data-punch="start"
+             title="누르면 지금 시각으로 출근이 찍힙니다">출근</button>
+        <b>${r.start ? `<span class="edit" data-edit="start">${esc(r.start)}</span>
+             <button class="del" data-clear="start">&#10005;</button>` : '—'}</b></div>
+      <div class="kv"><button class="plab${r.end ? ' set' : ''}" data-punch="end"
+             title="누르면 지금 시각으로 퇴근이 찍힙니다">퇴근</button>
+        <b>${r.end ? `<span class="edit" data-edit="end">${esc(r.end)}</span>
+             <button class="del" data-clear="end">&#10005;</button>` : '—'}</b></div>
+      <div class="kv" style="border-top:1px solid var(--rule2);margin-top:5px;padding-top:6px">
+        <span>근무</span><b>${shown != null ? `${Math.floor(shown/60)}h ${pad(shown%60)}m${mins == null ? ' (진행중)' : ''}` : '—'}</b></div>
+    </div>
+    <a class="foot" href="index.html" target="_blank" rel="noopener">근무시간</a>`;
+}
+
+/* ── 미니 캘린더 ──────────────────────────────────────── */
+/* ── 구글 캘린더 연동 ─────────────────────────────────── */
+const gcal = {token:null, exp:0, months:{}, busy:false, err:null, client:null};
+function gcalReady(){ return !!GOOGLE_CLIENT_ID; }
+function monthKey(y, m){ return `${y}-${pad(m+1)}`; }
+
+function loadGsi(){
+  if(window.google && google.accounts && google.accounts.oauth2) return Promise.resolve();
+  if(loadGsi._p) return loadGsi._p;
+  loadGsi._p = new Promise((res, rej) => {
+    const sc = document.createElement('script');
+    sc.src = 'https://accounts.google.com/gsi/client';
+    sc.async = true; sc.onload = res; sc.onerror = () => rej(new Error('gsi'));
+    document.head.appendChild(sc);
+  });
+  return loadGsi._p;
+}
+async function gcalAuth(interactive){
+  if(!gcalReady()) throw new Error('no-client-id');
+  if(gcal.token && Date.now() < gcal.exp - 60000) return gcal.token;
+  await loadGsi();
+  return new Promise((res, rej) => {
+    gcal.client = google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CLIENT_ID,
+      scope: 'https://www.googleapis.com/auth/calendar.readonly',
+      callback: (t) => {
+        if(t && t.access_token){
+          gcal.token = t.access_token;
+          gcal.exp = Date.now() + (t.expires_in || 3600) * 1000;
+          res(gcal.token);
+        }else rej(new Error('token'));
+      },
+      error_callback: () => rej(new Error('cancel'))
+    });
+    gcal.client.requestAccessToken({prompt: interactive ? 'consent' : ''});
+  });
+}
+async function gcalLoadMonth(y, m, interactive){
+  const key = monthKey(y, m);
+  if(gcal.months[key] || gcal.busy) return;
+  if(!gcalReady()) return;
+  gcal.busy = true; gcal.err = null;
+  refreshWidget('minical');
+  try{
+    const token = await gcalAuth(interactive);
+    const from = new Date(y, m, 1).toISOString();
+    const to = new Date(y, m+1, 1).toISOString();
+    const u = `https://www.googleapis.com/calendar/v3/calendars/primary/events`
+      + `?timeMin=${encodeURIComponent(from)}&timeMax=${encodeURIComponent(to)}`
+      + `&singleEvents=true&orderBy=startTime&maxResults=250`;
+    const r = await fetch(u, {headers:{Authorization:'Bearer ' + token}});
+    if(r.status === 401){ gcal.token = null; throw new Error('expired'); }
+    if(!r.ok) throw new Error('http-' + r.status);
+    const j = await r.json();
+    const by = {};
+    (j.items || []).forEach(ev => {
+      const st = ev.start || {};
+      const allDay = !!st.date;
+      const ds = allDay ? st.date : String(st.dateTime).slice(0, 10);
+      const time = allDay ? '종일' : String(st.dateTime).slice(11, 16);
+      (by[ds] = by[ds] || []).push({time, title: ev.summary || '(제목 없음)', allDay, link: ev.htmlLink});
+    });
+    gcal.months[key] = by;
+  }catch(e){
+    gcal.err = e.message === 'cancel' ? '연결이 취소되었습니다'
+      : e.message === 'no-client-id' ? null : '구글 캘린더를 불러오지 못했습니다';
+  }finally{
+    gcal.busy = false;
+    refreshWidget('minical');
+  }
+}
+function gcalOf(ds){
+  const by = gcal.months[ds.slice(0, 7)];
+  return (by && by[ds]) || [];
+}
+
+let calY = new Date().getFullYear(), calM = new Date().getMonth(), calSel = null;
+function renderMinical(){
+  const first = new Date(calY, calM, 1), startDow = first.getDay();
+  const days = new Date(calY, calM+1, 0).getDate(), ts = todayStr();
+  const linked = !!gcal.months[monthKey(calY, calM)];
+  let cells = '';
+  for(let i = 0; i < startDow; i++) cells += `<div class="cc off"></div>`;
+  for(let d = 1; d <= days; d++){
+    const ds = `${calY}-${pad(calM+1)}-${pad(d)}`;
+    const dow = new Date(calY, calM, d).getDay();
+    let cls = 'cc';
+    if(dow === 0) cls += ' sun';
+    if(dow === 6) cls += ' sat';
+    if(ds === ts) cls += ' today';
+    if(ds === calSel) cls += ' sel';
+    const evs = gcalOf(ds);
+    if(evs.length) cls += ' hasev';
+    const line = evs.slice(0, 2).map(e =>
+      `<i class="cev">${esc(e.title)}</i>`).join('')
+      + (evs.length > 2 ? `<i class="cmore">+${evs.length - 2}</i>` : '');
+    cells += `<div class="${cls}" data-cal="${ds}"><b>${d}</b>${line}</div>`;
+  }
+  let bar;
+  if(!gcalReady()) bar = `<button class="cnav" disabled title="파일 상단 GOOGLE_CLIENT_ID 를 채우면 켜집니다">캘린더 미연결</button>`;
+  else if(gcal.busy) bar = `<button class="cnav" disabled>불러오는 중…</button>`;
+  else if(linked) bar = `<button class="cnav" data-gcal="reload" title="새로고침">↻ 일정</button>`;
+  else bar = `<button class="cnav on" data-gcal="connect">구글 캘린더 연결</button>`;
+  return `<div class="calhead">
+      <button class="cnav" data-cal-nav="-1">&larr;</button>
+      <span>${calY}. ${pad(calM+1)}</span>
+      <button class="cnav" data-cal-nav="1">&rarr;</button>
+      <button class="cnav" data-cal-nav="0" title="이번 달">오늘</button>
+      ${bar}</div>
+    ${gcal.err ? `<div class="sub" style="color:var(--tick);margin-bottom:6px">${esc(gcal.err)}</div>` : ''}
+    <div class="calgrid">${['일','월','화','수','목','금','토']
+      .map((d, i) => `<div class="dow${i === 0 ? ' sun' : i === 6 ? ' sat' : ''}">${d}</div>`).join('')}${cells}</div>
+    ${renderCalPanel()}`;
+}
+function renderCalPanel(){
+  const ds = calSel || todayStr();
+  const evs = gcalOf(ds);
+  const [y, m, d] = ds.split('-').map(Number);
+  const wd = ['일','월','화','수','목','금','토'][new Date(y, m-1, d).getDay()];
+  return `<div class="calpanel">
+    <div class="cphead">${m}월 ${d}일 (${wd})${ds === todayStr() ? ' · 오늘' : ''}</div>
+    ${evs.length
+      ? evs.map(e => `<div class="li"><span class="t">${esc(e.time)}</span>
+          <span class="x">${esc(e.title)}</span></div>`).join('')
+      : `<div class="empty">${gcalReady()
+          ? '이 날짜의 일정이 없습니다.'
+          : '구글 캘린더가 연결되지 않았습니다.'}</div>`}
+    <a class="foot" href="https://calendar.google.com/calendar/r/day/${y}/${m}/${d}"
+       target="_blank" rel="noopener">구글 캘린더에서 이 날짜 열기</a>
+  </div>`;
+}
+
+/* ── 시세 ─────────────────────────────────────────────── */
+const market = {fx:null, coin:null, err:null};
+function won(n, d){ return Number(n).toLocaleString('ko-KR', {maximumFractionDigits:d ?? 0}); }
+async function loadMarket(){
+  try{
+    const r = await fetch('https://open.er-api.com/v6/latest/USD');
+    const j = await r.json();
+    if(j.result === 'success'){
+      const k = j.rates.KRW;
+      market.fx = {USD:k, EUR:k/j.rates.EUR, JPY100:(k/j.rates.JPY)*100, CNY:k/j.rates.CNY};
+    }
+  }catch(e){ market.err = '환율'; }
+  try{
+    const r = await fetch('https://api.upbit.com/v1/ticker?markets=KRW-BTC,KRW-ETH,KRW-XRP');
+    const j = await r.json();
+    if(Array.isArray(j)) market.coin = j;
+  }catch(e){ market.err = (market.err ? market.err + ' · ' : '') + '코인'; }
+  refreshWidget('market');
+}
+function renderMarket(){
+  if(!market.fx && !market.coin && !market.err)
+    return `<div class="empty">불러오는 중…</div>`;
+  let h = '';
+  if(market.fx){
+    const f = market.fx;
+    h += `<div class="kv"><span>달러</span><b>${won(f.USD, 2)}</b></div>
+      <div class="kv"><span>유로</span><b>${won(f.EUR, 2)}</b></div>
+      <div class="kv"><span>엔 (100)</span><b>${won(f.JPY100, 2)}</b></div>
+      <div class="kv"><span>위안</span><b>${won(f.CNY, 2)}</b></div>`;
+  }
+  if(market.coin){
+    h += `<div class="mhead">코인</div>`;
+    h += market.coin.map(c => {
+      const up = c.signed_change_rate >= 0;
+      return `<div class="kv"><span>${esc(c.market.replace('KRW-',''))}</span>
+        <b>${won(c.trade_price)} <i class="${up ? 'up' : 'dn'}">${up ? '+' : ''}${(c.signed_change_rate*100).toFixed(2)}%</i></b></div>`;
+    }).join('');
+  }
+  if(market.err) h += `<div class="sub" style="color:var(--tick);margin-top:6px">${esc(market.err)} 불러오기 실패</div>`;
+  h += `<div class="attr">환율 Rates By Exchange Rate API · 코인 업비트</div>`;
+  return h;
+}
+
+/* ── 날씨 ─────────────────────────────────────────────── */
+const WX_LAT = 35.8714, WX_LON = 128.6014, WX_NAME = '대구';   // 위치를 바꾸려면 여기
+const wx = {cur:null, air:null, err:false};
+const WMO = {0:'맑음',1:'대체로 맑음',2:'구름 조금',3:'흐림',45:'안개',48:'안개',51:'이슬비',53:'이슬비',
+  55:'이슬비',61:'비',63:'비',65:'강한 비',71:'눈',73:'눈',75:'많은 눈',80:'소나기',81:'소나기',
+  82:'강한 소나기',95:'뇌우',96:'뇌우',99:'뇌우'};
+function pmGrade(v){ return v <= 15 ? '좋음' : v <= 35 ? '보통' : v <= 75 ? '나쁨' : '매우나쁨'; }
+async function loadWeather(){
+  try{
+    const u = `https://api.open-meteo.com/v1/forecast?latitude=${WX_LAT}&longitude=${WX_LON}`
+      + `&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code`
+      + `&timezone=Asia%2FSeoul&forecast_days=2`;
+    wx.cur = await (await fetch(u)).json();
+  }catch(e){ wx.err = true; }
+  try{
+    const u = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${WX_LAT}&longitude=${WX_LON}`
+      + `&current=pm10,pm2_5&timezone=Asia%2FSeoul`;
+    wx.air = await (await fetch(u)).json();
+  }catch(e){}
+  refreshWidget('weather');
+}
+function renderWeather(){
+  if(!wx.cur && !wx.err) return `<div class="empty">불러오는 중…</div>`;
+  if(!wx.cur) return `<div class="empty">날씨를 불러오지 못했습니다.</div>`;
+  const c = wx.cur.current, d = wx.cur.daily;
+  const air = wx.air && wx.air.current;
+  return `<div class="big">${Math.round(c.temperature_2m)}&deg;</div>
+    <div class="sub">${WX_NAME} · ${WMO[c.weather_code] || '—'}</div>
+    <div class="kv" style="margin-top:10px"><span>오늘</span>
+      <b>${Math.round(d.temperature_2m_max[0])}&deg; / ${Math.round(d.temperature_2m_min[0])}&deg;</b></div>
+    <div class="kv"><span>내일</span>
+      <b>${Math.round(d.temperature_2m_max[1])}&deg; / ${Math.round(d.temperature_2m_min[1])}&deg;
+      <i class="sub">${WMO[d.weather_code[1]] || ''}</i></b></div>
+    ${air ? `<div class="kv" style="border-top:1px solid var(--rule2);margin-top:8px;padding-top:7px">
+      <span>미세먼지</span><b>${pmGrade(air.pm10)} <i class="sub">${Math.round(air.pm10)}</i></b></div>
+      <div class="kv"><span>초미세</span><b>${pmGrade(air.pm2_5)} <i class="sub">${Math.round(air.pm2_5)}</i></b></div>` : ''}
+    <div class="attr">Open-Meteo</div>`;
+}
+
+/* ── 명언 · 스트레칭 · 생활영어 ────────────────────────── */
+const QUOTES = [
+  ['천천히 서둘러라.', 'Make haste slowly.', '아우구스투스'],
+  ['시작이 반이다.', 'Well begun is half done.', '아리스토텔레스'],
+  ['가장 중요한 것은 계속 질문하는 것이다.',
+   'The important thing is not to stop questioning.', '아인슈타인'],
+  ['완벽함은 더 보탤 것이 없을 때가 아니라 더 뺄 것이 없을 때 이루어진다.',
+   'Perfection is achieved not when there is nothing more to add, but when there is nothing left to take away.',
+   '생텍쥐페리'],
+  ['계획 없는 목표는 그저 소망일 뿐이다.', 'A goal without a plan is just a wish.', '생텍쥐페리'],
+  ['하루하루가 작은 인생이다.', 'Each day is a little life.', '쇼펜하우어'],
+  ['할 수 있다고 믿으면 이미 반은 온 것이다.',
+   'Believe you can and you are halfway there.', '시어도어 루스벨트'],
+  ['오늘 할 수 있는 일에 전력을 다하라.',
+   'Do what you can, with what you have, where you are.', '시어도어 루스벨트'],
+  ['질서는 자유의 조건이다.', 'Order is the condition of freedom.', '괴테'],
+  ['천 리 길도 한 걸음부터.',
+   'A journey of a thousand miles begins with a single step.', '노자']
+];
+function dayIndex(n){ return Math.floor(Date.now() / 86400000) % n; }
+function renderQuote(){
+  const q = QUOTES[dayIndex(QUOTES.length)];
+  return `<div style="font-size:15px;line-height:1.7">${esc(q[0])}</div>
+    <div class="qen">${esc(q[1])}</div>
+    <div class="sub" style="margin-top:8px">— ${esc(q[2])}</div>`;
+}
+
+/* 스트레칭: 간단한 그림 + 동작 설명 */
+const FIG = {
+  neck:`<svg viewBox="0 0 40 40" class="fig"><circle cx="20" cy="11" r="6"/><path d="M20 17v11"/>
+    <path d="M12 22h16"/><path d="M14 28l-3 8M26 28l3 8"/><path d="M26 8c3 1 4 3 4 5" class="acc"/></svg>`,
+  walk:`<svg viewBox="0 0 40 40" class="fig"><circle cx="21" cy="9" r="5"/><path d="M21 14v10"/>
+    <path d="M21 24l-5 10M21 24l6 9"/><path d="M21 17l-6 4M21 17l7 3"/>
+    <path d="M6 34h5M31 34h4" class="acc"/></svg>`,
+  wrist:`<svg viewBox="0 0 40 40" class="fig"><path d="M8 26h12l6-6"/><path d="M20 26l6 6"/>
+    <circle cx="30" cy="20" r="3"/><path d="M12 14c4-4 10-4 14 0" class="acc"/></svg>`,
+  back:`<svg viewBox="0 0 40 40" class="fig"><circle cx="20" cy="10" r="5"/><path d="M20 15v12"/>
+    <path d="M20 27l-5 9M20 27l5 9"/><path d="M20 18l-8-5M20 18l8-5"/>
+    <path d="M20 4v-2" class="acc"/></svg>`
+};
+const STRETCH = [
+  ['10:30', 'neck', '목 · 어깨 돌리기',
+   '고개를 천천히 좌우로 기울여 각 15초. 어깨는 귀 쪽으로 올렸다가 뒤로 크게 5회 돌립니다.'],
+  ['13:30', 'walk', '일어서서 걷기',
+   '자리에서 일어나 5분간 걷습니다. 물 한 컵을 가지러 가는 김에 하면 잊지 않습니다.'],
+  ['15:30', 'wrist', '손목 · 눈',
+   '손등을 몸쪽으로 당겨 15초씩 양손. 그다음 창밖 먼 곳을 20초간 바라봅니다.'],
+  ['17:00', 'back', '허리 펴고 호흡',
+   '의자 등받이에 허리를 붙이고 양손을 머리 위로 뻗어 10초. 코로 깊게 3번 들이쉽니다.']
+];
+function renderStretch(){
+  const nowM = new Date().getHours()*60 + new Date().getMinutes();
+  return STRETCH.map(([t, fig, name, desc]) => {
+    const [h, m] = t.split(':').map(Number);
+    const past = (h*60 + m) < nowM;
+    return `<div class="strow${past ? ' past' : ''}">
+      ${FIG[fig]}
+      <div class="stx"><div class="sthead"><span class="t">${t}</span> ${esc(name)}</div>
+        <div class="stdesc">${esc(desc)}</div></div></div>`;
+  }).join('');
+}
+
+/* 오늘의 생활영어 — 클릭하면 브라우저 음성으로 읽어줍니다 */
+const ENG = [
+  ['Could you walk me through it one more time?', '한 번만 더 짚어주실 수 있을까요?',
+   'walk through = 처음부터 차근차근 설명하다. 회의에서 아주 자주 씁니다.'],
+  ['Let me get back to you on that.', '그건 확인하고 다시 말씀드릴게요.',
+   '즉답을 피할 때 쓰는 정중한 표현.'],
+  ['I want to make sure we are on the same page.', '우리가 같은 이해인지 확인하고 싶어요.',
+   'on the same page = 인식이 일치한다.'],
+  ['That slipped my mind.', '깜빡했어요.', 'forgot 보다 부드럽게 들립니다.'],
+  ['Can we push it back a day?', '하루만 미룰 수 있을까요?',
+   'push back = 일정을 뒤로 미루다. 반대는 move up.'],
+  ['I will keep you posted.', '진행되는 대로 알려드릴게요.',
+   'keep someone posted = 계속 소식을 전하다.'],
+  ['It is up in the air right now.', '아직 확정되지 않았어요.',
+   'up in the air = 미정 상태.'],
+  ['Let us touch base next week.', '다음 주에 한번 얘기 나눠요.',
+   'touch base = 가볍게 상황을 공유하다.'],
+  ['I am swamped this week.', '이번 주는 일이 몰렸어요.',
+   'swamped = 눈코 뜰 새 없이 바쁘다. busy 보다 강합니다.'],
+  ['Just a heads up, the deadline moved.', '미리 알려드리면, 마감이 바뀌었어요.',
+   'heads up = 사전 귀띔.'],
+  ['Could you double-check these numbers?', '이 숫자들 한 번 더 봐주시겠어요?',
+   'double-check = 재확인하다.'],
+  ['That works for me.', '저는 그걸로 괜찮아요.',
+   '일정이나 제안에 동의할 때.'],
+  ['Let us circle back to this later.', '이건 나중에 다시 다루죠.',
+   'circle back = 나중에 그 주제로 돌아가다.'],
+  ['I am not following.', '이해가 잘 안 됩니다.',
+   "I don't understand 보다 부드럽게 되묻는 표현."],
+  ['Bear with me for a second.', '잠시만 기다려 주세요.',
+   '준비하거나 찾는 동안 양해를 구할 때.'],
+  ['We are running behind schedule.', '일정이 밀리고 있어요.',
+   'running behind = 예정보다 늦다.'],
+  ['Let me loop in the manager.', '매니저도 함께 넣을게요.',
+   'loop in = 메일이나 논의에 사람을 포함시키다.'],
+  ['Off the top of my head, around thirty.', '얼핏 생각하기로는 서른 정도요.',
+   'off the top of my head = 정확하진 않지만 대략.'],
+  ['That is a fair point.', '일리 있는 지적이네요.',
+   '상대 의견을 인정할 때.'],
+  ['Let us call it a day.', '오늘은 여기까지 하죠.',
+   '업무를 마칠 때 쓰는 관용 표현.']
+];
+function renderEnglish(){
+  const start = dayIndex(ENG.length);
+  const pick = Array.from({length:5}, (_, i) => ENG[(start + i) % ENG.length]);
+  return pick.map((e, i) => `<div class="erow" data-say="${esc(e[0])}" title="클릭하면 읽어줍니다">
+      <span class="enum">${i + 1}</span>
+      <div class="ex"><div class="een">${esc(e[0])}<i class="spk">&#9658;</i></div>
+        <div class="eko">${esc(e[1])}</div></div></div>`).join('');
+}
+
 const RENDER = {
   'worklog-entry': renderTodos, 'worktime': renderWorktime,
-  'carryover': renderCarryover, 'week': renderWeek, 'launcher': renderLauncher
+  'carryover': renderCarryover, 'week': renderWeek, 'launcher': renderLauncher,
+  'projects': renderProjects, 'punch': renderPunch, 'minical': renderMinical,
+  'market': renderMarket, 'weather': renderWeather, 'quote': renderQuote,
+  'stretch': renderStretch, 'english': renderEnglish
 };
 function renderCustom(item){
   const note = item.note || '';
@@ -460,6 +991,7 @@ function build(){
     el.className = 'w';
     el.dataset.i = i;
     el.style.gridColumn = 'span ' + item.w;
+    el.style.gridRow = 'span ' + (item.h + 12);
     el.style.height = item.h + 'px';
     const isCustom = item.id === 'custom';
     if(isCustom) el.dataset.custom = '1';
@@ -578,10 +1110,100 @@ grid.addEventListener('click', (e) => {
   }
   if(editing) return;
   if(e.target.id === 'todoAdd'){ addTodo(); return; }
+  if(e.target.id === 'projAdd'){ addProject(); return; }
+  if(e.target.id === 'projPurge'){
+    if(!confirm('완료된 업무를 목록에서 지울까요?')) return;
+    projects = projects.filter(p => p.status !== 'done');
+    saveProjects(); refreshWidget('projects'); return;
+  }
+  // 진행중인 업무 현황
+  const pact = e.target.dataset.pact;
+  if(pact){
+    const row = e.target.closest('.prow'); if(!row) return;
+    const p = projects.find(x => x.id === row.dataset.pid); if(!p) return;
+    if(pact === 'cycle'){
+      const i = STATUS.findIndex(s => s.k === (p.status || 'todo'));
+      p.status = STATUS[(i + 1) % STATUS.length].k;
+    }else if(pact === 'rename'){
+      const v = prompt('업무명', p.title); if(v === null) return;
+      if(!v.trim()) return; p.title = v.trim();
+    }else if(pact === 'note'){
+      const v = prompt('메모 (진행 상황 등)', p.note || ''); if(v === null) return;
+      p.note = v.trim();
+    }else if(pact === 'del'){
+      if(!confirm('이 업무를 지울까요?')) return;
+      projects = projects.filter(x => x.id !== p.id);
+    }
+    p.updatedAt = Date.now();
+    saveProjects(); refreshWidget('projects'); return;
+  }
+  // 근무시간 카운터
+  const ds = todayStr();
+  if(e.target.dataset.punch){
+    const k = e.target.dataset.punch, r = ensure(ds);
+    const now = new Date();
+    const cur = pad(now.getHours()) + ':' + pad(now.getMinutes());
+    if(r[k] && !confirm(`이미 ${r[k]} 로 찍혀 있습니다. ${cur} 로 바꿀까요?`)) return;
+    r[k] = cur;
+    savePunch(ds); refreshWidget('punch'); refreshWidget('worklog-entry'); return;
+  }
+  if(e.target.dataset.edit){
+    const k = e.target.dataset.edit, r = ensure(ds);
+    const v = prompt('시각을 HH:MM 으로 입력하세요', r[k] || '');
+    if(v === null) return;
+    if(!/^\d{1,2}:\d{2}$/.test(v.trim())){ toast('HH:MM 형식으로 입력하세요'); return; }
+    const p2 = v.trim().split(':');
+    r[k] = pad(+p2[0]) + ':' + pad(+p2[1]);
+    savePunch(ds); refreshWidget('punch'); refreshWidget('worklog-entry'); return;
+  }
+  if(e.target.dataset.clear){
+    const k = e.target.dataset.clear, r = ensure(ds);
+    if(!confirm(`${k === 'start' ? '출근' : '퇴근'} 기록을 지울까요?`)) return;
+    delete r[k];
+    savePunch(ds); refreshWidget('punch'); refreshWidget('worklog-entry'); return;
+  }
+  // 미니 캘린더
+  if(e.target.dataset.calNav){
+    const n = +e.target.dataset.calNav;
+    if(n === 0){ const t = new Date(); calY = t.getFullYear(); calM = t.getMonth(); calSel = todayStr(); }
+    else{
+      calM += n;
+      if(calM < 0){ calM = 11; calY -= 1; }
+      if(calM > 11){ calM = 0; calY += 1; }
+    }
+    refreshWidget('minical');
+    gcalLoadMonth(calY, calM, false);
+    return;
+  }
+  if(e.target.dataset.gcal){
+    if(e.target.dataset.gcal === 'reload') delete gcal.months[monthKey(calY, calM)];
+    gcalLoadMonth(calY, calM, true);
+    return;
+  }
+  const calCell = e.target.closest('[data-cal]');
+  if(calCell){
+    calSel = calCell.dataset.cal;
+    refreshWidget('minical'); return;
+  }
+  const sayRow = e.target.closest('[data-say]');
+  if(sayRow){
+    const text = sayRow.dataset.say;
+    if(!('speechSynthesis' in window)){ toast('이 브라우저는 음성 재생을 지원하지 않습니다.'); return; }
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US'; u.rate = 0.92;
+    const v = speechSynthesis.getVoices().find(v => /^en(-|_)US/i.test(v.lang))
+           || speechSynthesis.getVoices().find(v => /^en/i.test(v.lang));
+    if(v) u.voice = v;
+    speechSynthesis.speak(u);
+    sayRow.classList.add('saying');
+    u.onend = () => sayRow.classList.remove('saying');
+    return;
+  }
   const act = e.target.dataset.act;
   if(!act) return;
   const row = e.target.closest('.task'); if(!row) return;
-  const ds = todayStr(), id = row.dataset.id;
+  const id = row.dataset.id;
   const list = ensure(ds).todos;
   if(act === 'toggle'){
     const t = list.find(x => x.id === id);
@@ -593,8 +1215,17 @@ grid.addEventListener('click', (e) => {
   refreshWidget('worklog-entry');
   refreshWidget('week');
 });
+function addProject(){
+  const inp = document.getElementById('projIn'); if(!inp) return;
+  const title = inp.value.trim(); if(!title) return;
+  projects.push({id:newId(), title, status:'doing', note:'', createdAt:Date.now(), updatedAt:Date.now()});
+  saveProjects(); refreshWidget('projects');
+  const again = document.getElementById('projIn'); if(again) again.focus();
+}
 grid.addEventListener('keydown', (e) => {
-  if(e.target.id === 'todoIn' && e.key === 'Enter'){ e.preventDefault(); addTodo(); }
+  if(e.key !== 'Enter') return;
+  if(e.target.id === 'todoIn'){ e.preventDefault(); addTodo(); }
+  if(e.target.id === 'projIn'){ e.preventDefault(); addProject(); }
 });
 
 /* ── 드래그 이동 ──────────────────────────────────────── */
@@ -661,7 +1292,8 @@ grid.addEventListener('pointermove', (e) => {
   }
   if(rz.axis !== 'x'){
     const hh = Math.max(110, Math.min(700, Math.round((rz.h + (e.clientY - rz.y)) / 10) * 10));
-    if(hh !== it.h){ it.h = hh; rz.el.style.height = hh + 'px'; }
+    if(hh !== it.h){ it.h = hh; rz.el.style.height = hh + 'px';
+      rz.el.style.gridRow = 'span ' + (hh + 12); }
   }
   const m = rz.el.querySelector('.meta');
   if(m) m.innerHTML = it.w + '&times;' + it.h;
@@ -718,10 +1350,25 @@ onAuthStateChanged(auth, async (user) => {
     setSync('동기화됨 ✓');
   }catch(e){ setSync('불러오기 실패 — 오프라인?'); }
   records = data.records || {};
+  projects = Array.isArray(data.projects) ? data.projects : [];
   const d = data.dashboard;
-  if(d && Array.isArray(d.widgets) && d.widgets.length) layout = d.widgets;
+  if(d && Array.isArray(d.widgets) && d.widgets.length){
+    const mg = migrate(d.widgets);
+    layout = mg.list;
+    if(mg.changed) saveLayout();
+  }
   if(d && d.theme){ theme = d.theme; applyTheme(); }
   build();
+  loadMarket();
+  loadWeather();
+  if(gcalReady()) gcalLoadMonth(calY, calM, false);
+  clearInterval(window.__clock);
+  window.__clock = setInterval(() => {
+    const el = document.getElementById('punchClock');
+    if(!el) return;
+    const n = new Date();
+    el.innerHTML = `${pad(n.getHours())}:${pad(n.getMinutes())}<span>:${pad(n.getSeconds())}</span>`;
+  }, 1000);
 });
 
 /* ── 시작 ─────────────────────────────────────────────── */
