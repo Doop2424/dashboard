@@ -663,6 +663,14 @@ function renderPunch(){
 /* ── 미니 캘린더 ──────────────────────────────────────── */
 /* ── 구글 캘린더 연동 ─────────────────────────────────── */
 const gcal = {token:null, exp:0, months:{}, busy:false, err:null, client:null};
+// 새로고침해도 유지되도록 토큰을 탭 세션에 보관한다 (구글 토큰은 1시간짜리).
+try{
+  const saved = JSON.parse(sessionStorage.getItem('gcal_token') || 'null');
+  if(saved && saved.exp > Date.now() + 60000){ gcal.token = saved.token; gcal.exp = saved.exp; }
+}catch(e){}
+function keepToken(){
+  try{ sessionStorage.setItem('gcal_token', JSON.stringify({token:gcal.token, exp:gcal.exp})); }catch(e){}
+}
 function gcalReady(){ return !!GOOGLE_CLIENT_ID; }
 function monthKey(y, m){ return `${y}-${pad(m+1)}`; }
 
@@ -689,6 +697,7 @@ async function gcalAuth(interactive){
         if(t && t.access_token){
           gcal.token = t.access_token;
           gcal.exp = Date.now() + (t.expires_in || 3600) * 1000;
+          keepToken();
           res(gcal.token);
         }else rej(new Error('token'));
       },
@@ -711,7 +720,10 @@ async function gcalLoadMonth(y, m, interactive){
       + `?timeMin=${encodeURIComponent(from)}&timeMax=${encodeURIComponent(to)}`
       + `&singleEvents=true&orderBy=startTime&maxResults=250`;
     const r = await fetch(u, {headers:{Authorization:'Bearer ' + token}});
-    if(r.status === 401){ gcal.token = null; throw new Error('expired'); }
+    if(r.status === 401){
+      gcal.token = null; gcal.exp = 0; keepToken();
+      throw new Error('expired');
+    }
     if(!r.ok) throw new Error('http-' + r.status);
     const j = await r.json();
     const by = {};
@@ -724,7 +736,9 @@ async function gcalLoadMonth(y, m, interactive){
     });
     gcal.months[key] = by;
   }catch(e){
-    gcal.err = e.message === 'cancel' ? '연결이 취소되었습니다'
+    // 자동(조용한) 시도가 실패한 경우에는 오류를 띄우지 않고 연결 버튼만 보여준다.
+    if(!interactive) gcal.err = null;
+    else gcal.err = e.message === 'cancel' ? '연결이 취소되었습니다'
       : e.message === 'no-client-id' ? null : '구글 캘린더를 불러오지 못했습니다';
   }finally{
     gcal.busy = false;
@@ -984,22 +998,51 @@ async function openPostcode(query){
 const QUOTES = [
   ['천천히 서둘러라.', 'Make haste slowly.', '아우구스투스'],
   ['시작이 반이다.', 'Well begun is half done.', '아리스토텔레스'],
-  ['가장 중요한 것은 계속 질문하는 것이다.',
-   'The important thing is not to stop questioning.', '아인슈타인'],
-  ['완벽함은 더 보탤 것이 없을 때가 아니라 더 뺄 것이 없을 때 이루어진다.',
-   'Perfection is achieved not when there is nothing more to add, but when there is nothing left to take away.',
-   '생텍쥐페리'],
+  ['가장 중요한 것은 계속 질문하는 것이다.', 'The important thing is not to stop questioning.', '아인슈타인'],
+  ['완벽함은 더 보탤 것이 없을 때가 아니라 더 뺄 것이 없을 때 이루어진다.', 'Perfection is achieved not when there is nothing more to add, but when there is nothing left to take away.', '생텍쥐페리'],
   ['계획 없는 목표는 그저 소망일 뿐이다.', 'A goal without a plan is just a wish.', '생텍쥐페리'],
   ['하루하루가 작은 인생이다.', 'Each day is a little life.', '쇼펜하우어'],
-  ['할 수 있다고 믿으면 이미 반은 온 것이다.',
-   'Believe you can and you are halfway there.', '시어도어 루스벨트'],
-  ['오늘 할 수 있는 일에 전력을 다하라.',
-   'Do what you can, with what you have, where you are.', '시어도어 루스벨트'],
+  ['할 수 있다고 믿으면 이미 반은 온 것이다.', 'Believe you can and you are halfway there.', '시어도어 루스벨트'],
+  ['가진 것으로, 있는 자리에서, 할 수 있는 일을 하라.', 'Do what you can, with what you have, where you are.', '시어도어 루스벨트'],
   ['질서는 자유의 조건이다.', 'Order is the condition of freedom.', '괴테'],
-  ['천 리 길도 한 걸음부터.',
-   'A journey of a thousand miles begins with a single step.', '노자']
+  ['천 리 길도 한 걸음부터.', 'A journey of a thousand miles begins with a single step.', '노자'],
+  ['아는 것을 안다고 하고 모르는 것을 모른다고 하는 것, 그것이 앎이다.', 'To know what you know and what you do not know, that is true knowledge.', '공자'],
+  ['오늘 걷지 않으면 내일은 뛰어야 한다.', 'If you do not walk today, you will have to run tomorrow.', '서양 속담'],
+  ['운은 준비된 자에게 온다.', 'Chance favors the prepared mind.', '루이 파스퇴르'],
+  ['서두르지 않되 멈추지도 않는다.', 'Without haste, but without rest.', '괴테'],
+  ['잘 보낸 하루가 편안한 잠을 주듯, 잘 쓴 삶은 평온한 죽음을 준다.', 'As a well-spent day brings happy sleep, so a life well used brings happy death.', '레오나르도 다빈치'],
+  ['단순함은 궁극의 정교함이다.', 'Simplicity is the ultimate sophistication.', '레오나르도 다빈치'],
+  ['측정할 수 없으면 개선할 수 없다.', 'If you cannot measure it, you cannot improve it.', '켈빈 경'],
+  ['모든 모형은 틀렸지만 일부는 유용하다.', 'All models are wrong, but some are useful.', '조지 박스'],
+  ['문제를 명확히 정의하면 절반은 풀린 것이다.', 'A problem well stated is a problem half solved.', '찰스 케터링'],
+  ['좋은 판단은 경험에서 오고, 경험은 나쁜 판단에서 온다.', 'Good judgment comes from experience, and experience comes from bad judgment.', '리타 메이 브라운'],
+  ['배는 항구에 있을 때 가장 안전하지만, 그러라고 만든 것은 아니다.', 'A ship in harbor is safe, but that is not what ships are built for.', '존 A. 셰드'],
+  ['가장 어두운 시간은 해 뜨기 직전이다.', 'The darkest hour is just before the dawn.', '토머스 풀러'],
+  ['위대한 일은 작은 일들이 모여 이루어진다.', 'Great things are done by a series of small things brought together.', '반 고흐'],
+  ['생각하는 대로 살지 않으면 사는 대로 생각하게 된다.', 'If you do not live as you think, you will end up thinking as you live.', '폴 부르제'],
+  ['늦었다고 생각할 때가 가장 빠른 때다.', 'The best time to plant a tree was twenty years ago. The second best time is now.', '중국 속담'],
+  ['아무것도 하지 않으면 아무 일도 일어나지 않는다.', 'Nothing will work unless you do.', '마야 안젤루'],
+  ['성공은 최종적이지 않고 실패는 치명적이지 않다. 중요한 것은 계속할 용기다.', 'Success is not final, failure is not fatal: it is the courage to continue that counts.', '윈스턴 처칠'],
+  ['비관주의자는 모든 기회에서 어려움을 보고, 낙관주의자는 모든 어려움에서 기회를 본다.', 'A pessimist sees the difficulty in every opportunity; an optimist sees the opportunity in every difficulty.', '윈스턴 처칠'],
+  ['진실은 화내지 않는다.', 'Truth does not get angry.', '서양 속담'],
+  ['우리가 반복하는 것이 곧 우리다. 그러므로 탁월함은 습관이다.', 'We are what we repeatedly do. Excellence, then, is a habit.', '아리스토텔레스'],
+  ['모든 사람에게 예의 바르되, 소수와 친밀하라.', 'Be courteous to all, but intimate with few.', '조지 워싱턴'],
+  ['먼저 이해하려 하고, 그다음에 이해받으려 하라.', 'Seek first to understand, then to be understood.', '스티븐 코비'],
+  ['중요한 것은 바쁜 것이 아니라 무엇으로 바쁜가이다.', 'It is not enough to be busy; the question is: what are we busy about?', '헨리 데이비드 소로'],
+  ['시간이 없다는 말은 하고 싶지 않다는 말이다.', 'Saying you have no time is saying you do not want to.', '서양 속담'],
+  ['최선의 예측 방법은 그것을 만들어내는 것이다.', 'The best way to predict the future is to create it.', '피터 드러커'],
+  ['효율은 일을 바르게 하는 것이고, 효과는 바른 일을 하는 것이다.', 'Efficiency is doing things right; effectiveness is doing the right things.', '피터 드러커'],
+  ['틀리는 것을 겁내면 새로운 것을 결코 만들지 못한다.', 'If you are not prepared to be wrong, you will never come up with anything original.', '켄 로빈슨'],
+  ['답을 아는 것보다 옳은 질문을 하는 것이 어렵다.', 'The right question is harder to find than the right answer.', '피터 드러커'],
+  ['오늘 할 수 있는 일을 내일로 미루지 말라.', 'Never put off till tomorrow what you can do today.', '벤저민 프랭클린'],
+  ['준비에 실패하는 것은 실패를 준비하는 것이다.', 'By failing to prepare, you are preparing to fail.', '벤저민 프랭클린']
 ];
-function dayIndex(n){ return Math.floor(Date.now() / 86400000) % n; }
+// 현지시각 기준 '오늘'을 세어 하루에 한 번만 바뀌게 한다 (자정에 교체).
+function dayIndex(n){
+  const d = new Date();
+  const local = Date.now() - d.getTimezoneOffset() * 60000;
+  return Math.floor(local / 86400000) % n;
+}
 function renderQuote(){
   const q = QUOTES[dayIndex(QUOTES.length)];
   return `<div style="font-size:15px;line-height:1.7">${esc(q[0])}</div>
@@ -1044,48 +1087,89 @@ function renderStretch(){
 
 /* 오늘의 생활영어 — 클릭하면 브라우저 음성으로 읽어줍니다 */
 const ENG = [
-  ['Could you walk me through it one more time?', '한 번만 더 짚어주실 수 있을까요?',
-   'walk through = 처음부터 차근차근 설명하다. 회의에서 아주 자주 씁니다.'],
-  ['Let me get back to you on that.', '그건 확인하고 다시 말씀드릴게요.',
-   '즉답을 피할 때 쓰는 정중한 표현.'],
-  ['I want to make sure we are on the same page.', '우리가 같은 이해인지 확인하고 싶어요.',
-   'on the same page = 인식이 일치한다.'],
-  ['That slipped my mind.', '깜빡했어요.', 'forgot 보다 부드럽게 들립니다.'],
-  ['Can we push it back a day?', '하루만 미룰 수 있을까요?',
-   'push back = 일정을 뒤로 미루다. 반대는 move up.'],
-  ['I will keep you posted.', '진행되는 대로 알려드릴게요.',
-   'keep someone posted = 계속 소식을 전하다.'],
-  ['It is up in the air right now.', '아직 확정되지 않았어요.',
-   'up in the air = 미정 상태.'],
-  ['Let us touch base next week.', '다음 주에 한번 얘기 나눠요.',
-   'touch base = 가볍게 상황을 공유하다.'],
-  ['I am swamped this week.', '이번 주는 일이 몰렸어요.',
-   'swamped = 눈코 뜰 새 없이 바쁘다. busy 보다 강합니다.'],
-  ['Just a heads up, the deadline moved.', '미리 알려드리면, 마감이 바뀌었어요.',
-   'heads up = 사전 귀띔.'],
-  ['Could you double-check these numbers?', '이 숫자들 한 번 더 봐주시겠어요?',
-   'double-check = 재확인하다.'],
-  ['That works for me.', '저는 그걸로 괜찮아요.',
-   '일정이나 제안에 동의할 때.'],
-  ['Let us circle back to this later.', '이건 나중에 다시 다루죠.',
-   'circle back = 나중에 그 주제로 돌아가다.'],
-  ['I am not following.', '이해가 잘 안 됩니다.',
-   "I don't understand 보다 부드럽게 되묻는 표현."],
-  ['Bear with me for a second.', '잠시만 기다려 주세요.',
-   '준비하거나 찾는 동안 양해를 구할 때.'],
-  ['We are running behind schedule.', '일정이 밀리고 있어요.',
-   'running behind = 예정보다 늦다.'],
-  ['Let me loop in the manager.', '매니저도 함께 넣을게요.',
-   'loop in = 메일이나 논의에 사람을 포함시키다.'],
-  ['Off the top of my head, around thirty.', '얼핏 생각하기로는 서른 정도요.',
-   'off the top of my head = 정확하진 않지만 대략.'],
-  ['That is a fair point.', '일리 있는 지적이네요.',
-   '상대 의견을 인정할 때.'],
-  ['Let us call it a day.', '오늘은 여기까지 하죠.',
-   '업무를 마칠 때 쓰는 관용 표현.']
+  ['Could you walk me through it one more time?', '한 번만 더 짚어주실 수 있을까요?'],
+  ['Let me get back to you on that.', '그건 확인하고 다시 말씀드릴게요.'],
+  ['I want to make sure we are on the same page.', '우리가 같은 이해인지 확인하고 싶어요.'],
+  ['That slipped my mind.', '깜빡했어요.'],
+  ['Can we push it back a day?', '하루만 미룰 수 있을까요?'],
+  ['I will keep you posted.', '진행되는 대로 알려드릴게요.'],
+  ['It is up in the air right now.', '아직 확정되지 않았어요.'],
+  ['Let us touch base next week.', '다음 주에 한번 얘기 나눠요.'],
+  ['I am swamped this week.', '이번 주는 일이 몰렸어요.'],
+  ['Just a heads up, the deadline moved.', '미리 알려드리면, 마감이 바뀌었어요.'],
+  ['Could you double-check these numbers?', '이 숫자들 한 번 더 봐주시겠어요?'],
+  ['That works for me.', '저는 그걸로 괜찮아요.'],
+  ['Let us circle back to this later.', '이건 나중에 다시 다루죠.'],
+  ['I am not following.', '이해가 잘 안 됩니다.'],
+  ['Bear with me for a second.', '잠시만 기다려 주세요.'],
+  ['We are running behind schedule.', '일정이 밀리고 있어요.'],
+  ['Let me loop in the manager.', '매니저도 함께 넣을게요.'],
+  ['Off the top of my head, around thirty.', '얼핏 생각하기로는 서른 정도요.'],
+  ['That is a fair point.', '일리 있는 지적이네요.'],
+  ['Let us call it a day.', '오늘은 여기까지 하죠.'],
+  ['Can you send it over by end of day?', '오늘 안으로 보내주실 수 있나요?'],
+  ['I will take care of it.', '제가 처리하겠습니다.'],
+  ['Sorry, I did not catch that.', '죄송해요, 못 알아들었어요.'],
+  ['Could you speak up a little?', '조금만 크게 말씀해 주시겠어요?'],
+  ['Let me share my screen.', '화면 공유하겠습니다.'],
+  ['You are breaking up.', '소리가 끊겨요.'],
+  ['Can everyone hear me?', '다들 잘 들리시나요?'],
+  ['Let us park that for now.', '그건 일단 미뤄두죠.'],
+  ['I will follow up with an email.', '메일로 다시 정리해서 보내겠습니다.'],
+  ['Where do we stand on this?', '이건 지금 어디까지 진행됐나요?'],
+  ['What is the status on the report?', '보고서 진행 상황이 어떻게 되나요?'],
+  ['I need a bit more context.', '배경 설명이 조금 더 필요해요.'],
+  ['That is out of scope for now.', '그건 지금 범위 밖입니다.'],
+  ['Let us keep it simple.', '간단하게 갑시다.'],
+  ['I would rather not commit to that yet.', '아직 확답은 드리기 어렵습니다.'],
+  ['Can we revisit this next quarter?', '다음 분기에 다시 볼 수 있을까요?'],
+  ['I am on it.', '지금 하고 있습니다.'],
+  ['Give me a rough estimate.', '대략적인 추정치만 주세요.'],
+  ['We are almost there.', '거의 다 왔습니다.'],
+  ['Let me run it by my team first.', '팀에 먼저 확인해 보겠습니다.'],
+  ['That makes sense.', '이해됩니다.'],
+  ['I see where you are coming from.', '무슨 말씀인지 알겠습니다.'],
+  ['Let us agree to disagree.', '견해 차이로 남겨두죠.'],
+  ['Could you clarify what you mean?', '무슨 뜻인지 명확히 해주시겠어요?'],
+  ['I will send the invite shortly.', '곧 초대장 보내드리겠습니다.'],
+  ['Does that timeline work for you?', '그 일정 괜찮으신가요?'],
+  ['Let us aim for Friday.', '금요일을 목표로 하죠.'],
+  ['We need to prioritize.', '우선순위를 정해야 합니다.'],
+  ['That is not on my radar.', '그건 제가 파악하지 못하고 있었어요.'],
+  ['Keep me in the loop.', '저도 계속 공유해 주세요.'],
+  ['I will draft something up.', '초안을 하나 잡아보겠습니다.'],
+  ['Let me pull up the file.', '파일 좀 열어볼게요.'],
+  ['Can you walk me through the numbers?', '숫자를 하나씩 설명해 주시겠어요?'],
+  ['We are short on time.', '시간이 빠듯합니다.'],
+  ['Let us wrap up.', '마무리하죠.'],
+  ['I will circulate the minutes.', '회의록을 돌리겠습니다.'],
+  ['Any objections?', '이견 있으신가요?'],
+  ['Let us put it to a vote.', '표결로 정하죠.'],
+  ['I am flexible on that.', '그건 저는 유연합니다.'],
+  ['Let me sleep on it.', '하루만 생각해 보겠습니다.'],
+  ['That is above my pay grade.', '제 선에서 결정할 일이 아닙니다.'],
+  ['I will escalate this.', '윗선에 보고하겠습니다.'],
+  ['Let us not reinvent the wheel.', '있는 걸 두고 새로 만들지는 맙시다.'],
+  ['We are on track.', '일정대로 가고 있습니다.'],
+  ['It fell through the cracks.', '누락됐습니다.'],
+  ['Let me take a stab at it.', '제가 한번 해보겠습니다.'],
+  ['Can you ballpark it?', '대략 얼마쯤인지 말해줄 수 있나요?'],
+  ['I will ping you later.', '나중에 연락드릴게요.'],
+  ['That is a tall order.', '쉽지 않은 요구네요.'],
+  ['Let us play it by ear.', '상황 봐가면서 하죠.'],
+  ['We are in good shape.', '상황은 괜찮습니다.'],
+  ['I stand corrected.', '제가 틀렸네요, 정정합니다.'],
+  ['Let me clarify one thing.', '한 가지만 짚고 넘어가겠습니다.'],
+  ['That is worth looking into.', '한번 살펴볼 만합니다.'],
+  ['Can we take this offline?', '이건 따로 얘기할까요?'],
+  ['I will handle the paperwork.', '서류는 제가 처리하겠습니다.'],
+  ['Let us set expectations early.', '기대치를 미리 맞춰두죠.'],
+  ['That is the crux of it.', '그게 핵심입니다.'],
+  ['We will cross that bridge when we come to it.', '그건 그때 가서 생각하죠.'],
+  ['Thanks for the quick turnaround.', '빠르게 처리해 주셔서 고맙습니다.']
 ];
 function renderEnglish(){
-  const start = dayIndex(ENG.length);
+  const start = (dayIndex(ENG.length) * 5) % ENG.length;
   const pick = Array.from({length:5}, (_, i) => ENG[(start + i) % ENG.length]);
   return pick.map((e, i) => `<div class="erow" data-say="${esc(e[0])}" title="클릭하면 읽어줍니다">
       <span class="enum">${i + 1}</span>
