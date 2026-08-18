@@ -120,6 +120,17 @@
            color:var(--ink3);font-size:12.5px;gap:4px;text-align:center}
   .pending .p1{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber)}
   .empty{color:var(--ink3);font-size:13px;padding:6px 0}
+  .ziphead{display:flex;align-items:center;justify-content:space-between;font-size:12px;
+           color:var(--ink3);margin-bottom:6px}
+  .zipbox{width:100%;height:calc(100% - 28px);min-height:200px;border:1px solid var(--rule2);border-radius:var(--r)}
+  .zipres{margin-top:12px}
+  .zipcode{font-family:var(--mono);font-size:30px;font-weight:700;letter-spacing:.02em;cursor:pointer}
+  .zipcode:hover{color:var(--blue)}
+  .zipaddr{font-size:13.5px;margin-top:4px;cursor:pointer;line-height:1.5}
+  .zipaddr:hover{color:var(--blue)}
+  .zipsub{font-size:11.5px;color:var(--ink3);margin-top:3px;cursor:pointer}
+  .zipsub:hover{color:var(--ink2)}
+  .zipres .linkish{margin-top:8px;display:inline-block}
   .srow{display:flex;gap:8px;align-items:baseline;padding:6px 0;font-size:13px;
         border-bottom:1px solid var(--rule2)}
   .srow:last-of-type{border-bottom:0}
@@ -410,6 +421,7 @@ const CAT = [
   {id:'history',       n:'역사 속 오늘',      g:'기타', w:3, h:160},
   {id:'stretch',       n:'스트레칭 알림',     g:'기타', w:3, h:160},
   {id:'stock',         n:'주가 알림',         g:'시장', w:4, h:320},
+  {id:'zipcode',       n:'우편번호 찾기',     g:'기타', w:4, h:340},
   {id:'english',       n:'오늘의 생활영어',   g:'기타', w:5, h:320},
   {id:'launcher',      n:'유틸리티',          g:'기타', w:12, h:150},
   {id:'custom',        n:'새 위젯 (직접 정의)', g:'기타', w:3, h:180, isNew:true}
@@ -910,6 +922,64 @@ function renderStock(){
     + `<a class="foot" href="${STOCK_BASE}" target="_blank" rel="noopener">종목·기준가 설정</a>`;
 }
 
+/* ── 우편번호 찾기 (카카오 우편번호 서비스, 키 불필요) ──── */
+const zip = {open:false, result:null, recent:[], err:null};
+function loadPostcode(){
+  if(window.daum && window.daum.Postcode) return Promise.resolve();
+  if(loadPostcode._p) return loadPostcode._p;
+  loadPostcode._p = new Promise((res, rej) => {
+    const sc = document.createElement('script');
+    sc.src = 'https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+    sc.onload = res; sc.onerror = () => rej(new Error('load'));
+    document.head.appendChild(sc);
+  });
+  return loadPostcode._p;
+}
+function renderZip(){
+  if(zip.open){
+    return `<div class="ziphead"><span>주소를 선택하세요</span>
+        <button class="cnav" id="zipClose">닫기</button></div>
+      <div class="zipbox" id="zipBox"></div>`;
+  }
+  const r = zip.result;
+  return `<div class="addtodo"><input id="zipIn" placeholder="도로명·건물명·지번 입력 후 Enter">
+      <button id="zipGo">찾기</button></div>
+    ${zip.err ? `<div class="sub" style="color:var(--tick);margin-top:8px">${esc(zip.err)}</div>` : ''}
+    ${r ? `<div class="zipres">
+        <div class="zipcode" data-copy="${esc(r.zonecode)}" title="클릭하면 복사">${esc(r.zonecode)}</div>
+        <div class="zipaddr" data-copy="${esc(r.road)}" title="클릭하면 복사">${esc(r.road)}</div>
+        ${r.jibun ? `<div class="zipsub" data-copy="${esc(r.jibun)}" title="클릭하면 복사">지번 ${esc(r.jibun)}</div>` : ''}
+        <button class="linkish" data-copy="${esc('[' + r.zonecode + '] ' + r.road)}">우편번호+주소 한번에 복사</button>
+      </div>`
+      : `<div class="empty">건물명이나 도로명 일부만 넣어도 찾아줍니다.<br>예) 웅남로 618 / 선진회계법인</div>`}
+    ${zip.recent.length ? `<div class="mhead">최근 조회</div>` + zip.recent.map(x =>
+        `<div class="li" data-copy="${esc('[' + x.zonecode + '] ' + x.road)}" style="cursor:pointer" title="클릭하면 복사">
+          <span class="t">${esc(x.zonecode)}</span><span class="x">${esc(x.road)}</span></div>`).join('') : ''}`;
+}
+async function openPostcode(query){
+  zip.err = null; zip.open = true;
+  refreshWidget('zipcode');
+  const box = document.getElementById('zipBox');
+  if(!box) return;
+  try{
+    await loadPostcode();
+    new daum.Postcode({
+      oncomplete: (data) => {
+        const road = data.roadAddress + (data.buildingName ? ' (' + data.buildingName + ')' : '');
+        zip.result = {zonecode:data.zonecode, road, jibun:data.jibunAddress || ''};
+        zip.recent = [zip.result, ...zip.recent.filter(x => x.zonecode !== data.zonecode)].slice(0, 4);
+        zip.open = false;
+        refreshWidget('zipcode');
+      },
+      onresize: () => {},
+      width: '100%', height: '100%'
+    }).embed(box, {q: query || '', autoClose: false});
+  }catch(e){
+    zip.open = false; zip.err = '우편번호 서비스를 불러오지 못했습니다.';
+    refreshWidget('zipcode');
+  }
+}
+
 /* ── 명언 · 스트레칭 · 생활영어 ────────────────────────── */
 const QUOTES = [
   ['천천히 서둘러라.', 'Make haste slowly.', '아우구스투스'],
@@ -1028,7 +1098,7 @@ const RENDER = {
   'carryover': renderCarryover, 'week': renderWeek, 'launcher': renderLauncher,
   'projects': renderProjects, 'punch': renderPunch, 'minical': renderMinical,
   'market': renderMarket, 'weather': renderWeather, 'quote': renderQuote,
-  'stretch': renderStretch, 'english': renderEnglish, 'stock': renderStock
+  'stretch': renderStretch, 'english': renderEnglish, 'stock': renderStock, 'zipcode': renderZip
 };
 function renderCustom(item){
   const note = item.note || '';
@@ -1171,6 +1241,19 @@ grid.addEventListener('click', (e) => {
   if(editing) return;
   if(e.target.id === 'todoAdd'){ addTodo(); return; }
   if(e.target.id === 'projAdd'){ addProject(); return; }
+  if(e.target.id === 'zipGo'){
+    const v = (document.getElementById('zipIn') || {}).value || '';
+    openPostcode(v.trim()); return;
+  }
+  if(e.target.id === 'zipClose'){ zip.open = false; refreshWidget('zipcode'); return; }
+  const cp = e.target.closest('[data-copy]');
+  if(cp){
+    const t = cp.dataset.copy;
+    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject())
+      .then(() => toast('복사했습니다: ' + t))
+      .catch(() => { prompt('아래를 복사하세요', t); });
+    return;
+  }
   if(e.target.id === 'projPurge'){
     if(!confirm('완료된 업무를 목록에서 지울까요?')) return;
     projects = projects.filter(p => p.status !== 'done');
@@ -1286,6 +1369,7 @@ grid.addEventListener('keydown', (e) => {
   if(e.key !== 'Enter') return;
   if(e.target.id === 'todoIn'){ e.preventDefault(); addTodo(); }
   if(e.target.id === 'projIn'){ e.preventDefault(); addProject(); }
+  if(e.target.id === 'zipIn'){ e.preventDefault(); openPostcode(e.target.value.trim()); }
 });
 
 /* ── 드래그 이동 ──────────────────────────────────────── */
