@@ -120,6 +120,55 @@
            color:var(--ink3);font-size:12.5px;gap:4px;text-align:center}
   .pending .p1{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber)}
   .empty{color:var(--ink3);font-size:13px;padding:6px 0}
+  /* 일정 계획 */
+  .plhead{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;margin-bottom:8px}
+  .plhead .sp{flex:1}
+  .plclip{display:flex;align-items:center;gap:8px;font-size:12px;background:var(--soft);
+          border:1px solid var(--rule2);border-left:3px solid var(--tick);border-radius:var(--r);
+          padding:6px 10px;margin-bottom:8px;color:var(--ink2)}
+  .plgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+  .plgrid .dow{text-align:center;font-size:10.5px;color:var(--ink3);padding-bottom:3px}
+  .plgrid .dow.sun{color:var(--tick)} .plgrid .dow.sat{color:var(--blue)}
+  .pc{min-height:62px;border:1px solid var(--rule2);border-radius:3px;padding:3px;cursor:pointer;
+      display:flex;flex-direction:column;gap:2px;overflow:hidden;font-size:11.5px;color:var(--ink2)}
+  .pc:hover{border-color:var(--blue)}
+  .pc.off{visibility:hidden;cursor:default;border:0}
+  .pc b{font-weight:inherit;line-height:1.1}
+  .pc.sun{color:var(--tick)} .pc.sat{color:var(--blue)}
+  .pc.today{border-color:var(--tick)}
+  .pc.sel{background:var(--soft);border-color:var(--blue);box-shadow:inset 0 0 0 1px var(--blue)}
+  .pchip{display:block;font-style:normal;font-size:9px;line-height:1.35;color:#fff;border-radius:2px;
+         padding:1px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pmore{font-family:var(--mono);font-size:8.5px;font-style:normal;color:var(--ink3)}
+  .gchip{display:block;font-style:normal;font-size:9px;line-height:1.35;border-radius:2px;
+         padding:1px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+         border:1px dashed var(--rule);color:var(--ink3)}
+  .pchip.done{box-shadow:inset 0 0 0 1px rgba(255,255,255,.55)}
+  .plrow.reg{opacity:.75}
+  .regtag{font-family:var(--mono);font-size:9px;letter-spacing:.06em;color:var(--ok);
+          border:1px solid var(--ok);border-radius:2px;padding:1px 5px;flex:none}
+  .cnav.go{border-color:var(--blue);color:var(--blue)}
+  .cnav:disabled{opacity:.5;cursor:default}
+  .plcfg{background:var(--soft);border:1px solid var(--rule2);border-radius:var(--r);
+         padding:10px 12px;margin-bottom:10px}
+  .chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+  .chip{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--rule);border-radius:12px;
+        padding:2px 9px;font-size:12px;background:transparent;color:var(--ink2);cursor:default}
+  .chip button{border:0;background:transparent;color:inherit;cursor:pointer;font-size:9px;opacity:.6;padding:0}
+  .chip button:hover{opacity:1;color:var(--tick)}
+  .chip.pick{cursor:pointer}
+  .chip.pick:hover{border-color:var(--blue);color:var(--blue)}
+  .chip.pick.on{background:var(--blue);border-color:var(--blue);color:#fff}
+  .plrow{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13px;
+         border-bottom:1px solid var(--rule2)}
+  .pdot{width:8px;height:8px;border-radius:2px;flex:none}
+  .plname{font-weight:600;flex:none;max-width:30%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .plwho{color:var(--blue);font-size:12px;flex:none}
+  .plmemo{flex:1;min-width:0;color:var(--ink3);font-size:12px;overflow:hidden;
+          text-overflow:ellipsis;white-space:nowrap}
+  .plform{margin-top:10px;padding-top:10px;border-top:1px solid var(--rule2)}
+  .plform select{width:100%;border:1px solid var(--rule2);background:var(--soft);color:var(--ink);
+                 border-radius:var(--r);padding:6px 9px;margin-bottom:8px}
   .ziphead{display:flex;align-items:center;justify-content:space-between;font-size:12px;
            color:var(--ink3);margin-bottom:6px}
   .zipbox{width:100%;height:calc(100% - 28px);min-height:200px;border:1px solid var(--rule2);border-radius:var(--r)}
@@ -421,6 +470,7 @@ const CAT = [
   {id:'history',       n:'역사 속 오늘',      g:'기타', w:3, h:160},
   {id:'stretch',       n:'스트레칭 알림',     g:'기타', w:3, h:160},
   {id:'stock',         n:'주가 알림',         g:'시장', w:4, h:320},
+  {id:'planner',       n:'일정 계획',         g:'업무', w:12, h:560},
   {id:'zipcode',       n:'우편번호 찾기',     g:'기타', w:4, h:340},
   {id:'english',       n:'오늘의 생활영어',   g:'기타', w:5, h:320},
   {id:'launcher',      n:'유틸리티',          g:'기타', w:12, h:150},
@@ -692,7 +742,7 @@ async function gcalAuth(interactive){
   return new Promise((res, rej) => {
     gcal.client = google.accounts.oauth2.initTokenClient({
       client_id: GOOGLE_CLIENT_ID,
-      scope: 'https://www.googleapis.com/auth/calendar.readonly',
+      scope: 'https://www.googleapis.com/auth/calendar.events',
       callback: (t) => {
         if(t && t.access_token){
           gcal.token = t.access_token;
@@ -744,6 +794,31 @@ async function gcalLoadMonth(y, m, interactive){
     gcal.busy = false;
     refreshWidget('minical');
   }
+}
+async function gcalInsert(ds, summary, description){
+  if(!gcalReady()) throw new Error('no-client-id');
+  const token = await gcalAuth(false).catch(() => gcalAuth(true));
+  const end = new Date(ds + 'T00:00:00');
+  end.setDate(end.getDate() + 1);
+  const body = {
+    summary,
+    description: description || '',
+    start: {date: ds},
+    end: {date: `${end.getFullYear()}-${pad(end.getMonth()+1)}-${pad(end.getDate())}`}
+  };
+  const r = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+    method: 'POST',
+    headers: {Authorization: 'Bearer ' + token, 'Content-Type': 'application/json'},
+    body: JSON.stringify(body)
+  });
+  if(r.status === 401 || r.status === 403){
+    gcal.token = null; gcal.exp = 0; keepToken();
+    throw new Error('permission');
+  }
+  if(!r.ok) throw new Error('http-' + r.status);
+  const j = await r.json();
+  delete gcal.months[ds.slice(0, 7)];      // 해당 월 캐시를 비워 다시 불러오게
+  return j.id;
 }
 function gcalOf(ds){
   const by = gcal.months[ds.slice(0, 7)];
@@ -934,6 +1009,152 @@ function renderStock(){
         ? `<div class="attr">${esc(when || '')} 기준</div>`
         : `<div class="sub" style="margin-top:8px">현재가는 아직 연결되지 않았습니다. 기준가만 표시합니다.</div>`)
     + `<a class="foot" href="${STOCK_BASE}" target="_blank" rel="noopener">종목·기준가 설정</a>`;
+}
+
+/* ── 일정 계획 (가상 일정 짜보기) ────────────────────────
+   구글 캘린더와 별개로, 프로젝트·담당자를 지정해 일정을 미리 그려보는 용도.
+   worklogs/{uid}.planner 에 저장된다.                                */
+const PAL = ['#1D4E89','#B3272D','#1F7A5C','#9A6B12','#6B3F8C','#0F7B8A','#8A5A2B','#4A5568'];
+let plan = {projects:[], members:[], events:{}};
+let planY = new Date().getFullYear(), planM = new Date().getMonth();
+let planSel = null, planClip = null, planCfg = false;
+let planForm = {projectId:'', memberIds:[], memo:''};
+
+let planTimer = null;
+function savePlan(){
+  if(!uid) return;
+  clearTimeout(planTimer);
+  setSync('저장 중…');
+  planTimer = setTimeout(async () => {
+    try{
+      await setDoc(doc(db,'worklogs',uid), { planner: plan, updatedAt: serverTimestamp() }, { merge:true });
+      setSync('동기화됨 ✓');
+    }catch(e){ setSync('저장 실패'); toast('일정 계획 저장 실패'); }
+  }, 700);
+}
+function projOf(id){ return plan.projects.find(x => x.id === id) || null; }
+function memName(id){ const m = plan.members.find(x => x.id === id); return m ? m.name : ''; }
+function evOf(ds){ return plan.events[ds] || []; }
+
+function renderPlanner(){
+  const ts = todayStr();
+  const first = new Date(planY, planM, 1), startDow = first.getDay();
+  const days = new Date(planY, planM+1, 0).getDate();
+  let cells = '';
+  for(let i = 0; i < startDow; i++) cells += `<div class="pc off"></div>`;
+  for(let d = 1; d <= days; d++){
+    const ds = `${planY}-${pad(planM+1)}-${pad(d)}`;
+    const dow = new Date(planY, planM, d).getDay();
+    let cls = 'pc';
+    if(dow === 0) cls += ' sun';
+    if(dow === 6) cls += ' sat';
+    if(ds === ts) cls += ' today';
+    if(ds === planSel) cls += ' sel';
+    const gevs = gcalOf(ds);
+    const gchips = gevs.slice(0, 2).map(g =>
+      `<i class="gchip">${esc(g.title.slice(0, 10))}</i>`).join('');
+    const chips = evOf(ds).slice(0, 3).map(ev => {
+      const pj = projOf(ev.projectId);
+      const who = (ev.memberIds || []).map(m => memName(m).slice(0,1)).join('');
+      const done = ev.gcalId ? ' done' : '';
+      return `<i class="pchip${done}" style="background:${pj ? pj.color : '#7A8A9D'}">${esc((pj ? pj.name : '미지정').slice(0,6))}${who ? ' ' + esc(who) : ''}</i>`;
+    }).join('');
+    const extra = (evOf(ds).length > 3 ? evOf(ds).length - 3 : 0) + (gevs.length > 2 ? gevs.length - 2 : 0);
+    const more = extra ? `<i class="pmore">+${extra}</i>` : '';
+    cells += `<div class="${cls}" data-pl-day="${ds}"><b>${d}</b>${gchips}${chips}${more}</div>`;
+  }
+
+  const sel = planSel || ts;
+  const list = evOf(sel);
+  const [y, m, d] = sel.split('-').map(Number);
+  const wd = ['일','월','화','수','목','금','토'][new Date(y, m-1, d).getDay()];
+
+  const cfg = planCfg ? `<div class="plcfg">
+      <div class="mhead">프로젝트</div>
+      <div class="chips">${plan.projects.map(x =>
+        `<span class="chip" style="border-color:${x.color};color:${x.color}">${esc(x.name)}
+          <button data-pl-projdel="${x.id}" title="삭제">&#10005;</button></span>`).join('')
+        || '<span class="sub">아직 없습니다</span>'}</div>
+      <div class="addtodo"><input id="plProjIn" placeholder="프로젝트명 (예: 지엠비 반기검토)">
+        <button id="plProjAdd">추가</button></div>
+      <div class="mhead">담당자</div>
+      <div class="chips">${plan.members.map(x =>
+        `<span class="chip">${esc(x.name)}
+          <button data-pl-memdel="${x.id}" title="삭제">&#10005;</button></span>`).join('')
+        || '<span class="sub">아직 없습니다</span>'}</div>
+      <div class="addtodo"><input id="plMemIn" placeholder="담당자 이름">
+        <button id="plMemAdd">추가</button></div>
+    </div>` : '';
+
+  return `<div class="plhead">
+      <button class="cnav" data-pl-nav="-1">&larr;</button>
+      <span>${planY}. ${pad(planM+1)}</span>
+      <button class="cnav" data-pl-nav="1">&rarr;</button>
+      <button class="cnav" data-pl-nav="0">오늘</button>
+      <span class="sp"></span>
+      <button class="cnav${planCfg ? ' on' : ''}" id="plCfg">프로젝트·담당자</button>
+    </div>
+    ${planClip ? `<div class="plclip">복사됨 —
+        <b>${esc((projOf(planClip.projectId) || {name:'미지정'}).name)}</b>
+        · 날짜를 누르면 그 날짜에 붙습니다
+        <button class="cnav" id="plClipOff">해제</button></div>` : ''}
+    ${cfg}
+    <div class="plgrid">${['일','월','화','수','목','금','토']
+      .map((x, i) => `<div class="dow${i === 0 ? ' sun' : i === 6 ? ' sat' : ''}">${x}</div>`).join('')}${cells}</div>
+    <div class="calpanel">
+      <div class="cphead">${m}월 ${d}일 (${wd})${sel === ts ? ' · 오늘' : ''}</div>
+      ${(() => {
+        const gevs = gcalOf(sel);
+        if(!gevs.length) return '';
+        return `<div class="mhead">구글 캘린더</div>` + gevs.map(g =>
+          `<div class="li"><span class="t">${esc(g.time)}</span>
+            <span class="x">${esc(g.title)}</span></div>`).join('');
+      })()}
+      <div class="mhead">계획</div>
+      ${list.length ? list.map(ev => {
+        const pj = projOf(ev.projectId);
+        const who = (ev.memberIds || []).map(memName).filter(Boolean).join(', ');
+        return `<div class="plrow${ev.gcalId ? ' reg' : ''}">
+          <i class="pdot" style="background:${pj ? pj.color : '#7A8A9D'}"></i>
+          <span class="plname">${esc(pj ? pj.name : '미지정')}</span>
+          <span class="plwho">${esc(who)}</span>
+          <span class="plmemo">${esc(ev.memo || '')}</span>
+          ${ev.gcalId
+            ? `<span class="regtag">등록됨</span>`
+            : `<button class="cnav go" data-pl-gcal="${ev.id}">구글 등록</button>`}
+          <button class="cnav" data-pl-copy="${ev.id}">복사</button>
+          <button class="del" data-pl-del="${ev.id}">&#10005;</button></div>`;
+      }).join('') : `<div class="empty">이 날짜에 잡아둔 일정이 없습니다.</div>`}
+      <div class="plform">
+        <select id="plProj">
+          <option value="">프로젝트 선택</option>
+          ${plan.projects.map(x => `<option value="${x.id}"${planForm.projectId === x.id ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}
+        </select>
+        <div class="chips">${plan.members.map(x =>
+          `<button class="chip pick${planForm.memberIds.includes(x.id) ? ' on' : ''}"
+             data-pl-mem="${x.id}">${esc(x.name)}</button>`).join('')
+          || '<span class="sub">담당자를 먼저 등록하세요</span>'}</div>
+        <div class="addtodo"><input id="plMemo" placeholder="메모 (선택)" value="${esc(planForm.memo)}">
+          <button id="plAdd">일정 추가</button></div>
+      </div>
+    </div>`;
+}
+function syncPlanForm(){
+  const pj = document.getElementById('plProj');
+  if(pj) planForm.projectId = pj.value;
+  const mm = document.getElementById('plMemo');
+  if(mm) planForm.memo = mm.value;
+}
+function planAdd(){
+  syncPlanForm();
+  const sel = planSel || todayStr();
+  if(!planForm.projectId){ toast('프로젝트를 선택하세요.'); return; }
+  (plan.events[sel] = plan.events[sel] || []).push({
+    id: newId(), projectId: planForm.projectId,
+    memberIds: planForm.memberIds.slice(), memo: planForm.memo
+  });
+  planForm.memo = '';
+  savePlan(); refreshWidget('planner');
 }
 
 /* ── 우편번호 찾기 (카카오 우편번호 서비스, 키 불필요) ──── */
@@ -1182,7 +1403,7 @@ const RENDER = {
   'carryover': renderCarryover, 'week': renderWeek, 'launcher': renderLauncher,
   'projects': renderProjects, 'punch': renderPunch, 'minical': renderMinical,
   'market': renderMarket, 'weather': renderWeather, 'quote': renderQuote,
-  'stretch': renderStretch, 'english': renderEnglish, 'stock': renderStock, 'zipcode': renderZip
+  'stretch': renderStretch, 'english': renderEnglish, 'stock': renderStock, 'zipcode': renderZip, 'planner': renderPlanner
 };
 function renderCustom(item){
   const note = item.note || '';
@@ -1325,6 +1546,98 @@ grid.addEventListener('click', (e) => {
   if(editing) return;
   if(e.target.id === 'todoAdd'){ addTodo(); return; }
   if(e.target.id === 'projAdd'){ addProject(); return; }
+  // ── 일정 계획 ──
+  if(e.target.dataset.plNav != null){
+    const n = +e.target.dataset.plNav;
+    if(n === 0){ const t = new Date(); planY = t.getFullYear(); planM = t.getMonth(); planSel = todayStr(); }
+    else { planM += n; if(planM < 0){ planM = 11; planY -= 1; } if(planM > 11){ planM = 0; planY += 1; } }
+    refreshWidget('planner');
+    if(gcalReady()) gcalLoadMonth(planY, planM, false).then(() => refreshWidget('planner'));
+    return;
+  }
+  if(e.target.id === 'plCfg'){ planCfg = !planCfg; refreshWidget('planner'); return; }
+  if(e.target.id === 'plClipOff'){ planClip = null; refreshWidget('planner'); return; }
+  if(e.target.id === 'plProjAdd'){
+    const el = document.getElementById('plProjIn'); const v = el ? el.value.trim() : '';
+    if(!v) return;
+    plan.projects.push({id:newId(), name:v, color:PAL[plan.projects.length % PAL.length]});
+    savePlan(); refreshWidget('planner'); return;
+  }
+  if(e.target.id === 'plMemAdd'){
+    const el = document.getElementById('plMemIn'); const v = el ? el.value.trim() : '';
+    if(!v) return;
+    plan.members.push({id:newId(), name:v});
+    savePlan(); refreshWidget('planner'); return;
+  }
+  if(e.target.dataset.plProjdel){
+    if(!confirm('이 프로젝트를 지울까요? 이미 잡아둔 일정은 남습니다.')) return;
+    plan.projects = plan.projects.filter(x => x.id !== e.target.dataset.plProjdel);
+    savePlan(); refreshWidget('planner'); return;
+  }
+  if(e.target.dataset.plMemdel){
+    plan.members = plan.members.filter(x => x.id !== e.target.dataset.plMemdel);
+    savePlan(); refreshWidget('planner'); return;
+  }
+  if(e.target.dataset.plMem){
+    syncPlanForm();
+    const id = e.target.dataset.plMem;
+    planForm.memberIds = planForm.memberIds.includes(id)
+      ? planForm.memberIds.filter(x => x !== id) : planForm.memberIds.concat(id);
+    refreshWidget('planner'); return;
+  }
+  if(e.target.id === 'plAdd'){ planAdd(); return; }
+  if(e.target.dataset.plGcal){
+    const sel = planSel || todayStr();
+    const ev = evOf(sel).find(x => x.id === e.target.dataset.plGcal);
+    if(!ev) return;
+    const pj = projOf(ev.projectId);
+    const who = (ev.memberIds || []).map(memName).filter(Boolean).join(', ');
+    const title = (pj ? pj.name : '일정') + (who ? ` (${who})` : '');
+    const btn = e.target;
+    btn.disabled = true; btn.textContent = '등록 중…';
+    gcalInsert(sel, title, ev.memo || '')
+      .then(id => {
+        ev.gcalId = id;
+        savePlan();
+        toast('구글 캘린더에 등록했습니다.');
+        return gcalLoadMonth(planY, planM, false);
+      })
+      .then(() => { refreshWidget('planner'); refreshWidget('minical'); })
+      .catch(err => {
+        btn.disabled = false; btn.textContent = '구글 등록';
+        toast(err.message === 'permission'
+          ? '쓰기 권한이 필요합니다. 캘린더 위젯에서 연결을 다시 눌러주세요.'
+          : '등록 실패: ' + err.message);
+      });
+    return;
+  }
+  if(e.target.dataset.plCopy){
+    const sel = planSel || todayStr();
+    const ev = evOf(sel).find(x => x.id === e.target.dataset.plCopy);
+    if(ev){ planClip = {projectId:ev.projectId, memberIds:(ev.memberIds||[]).slice(), memo:ev.memo || ''};
+      toast('복사했습니다. 붙여넣을 날짜를 누르세요.'); refreshWidget('planner'); }
+    return;
+  }
+  if(e.target.dataset.plDel){
+    const sel = planSel || todayStr();
+    plan.events[sel] = evOf(sel).filter(x => x.id !== e.target.dataset.plDel);
+    if(!plan.events[sel].length) delete plan.events[sel];
+    savePlan(); refreshWidget('planner'); return;
+  }
+  const plDay = e.target.closest('[data-pl-day]');
+  if(plDay){
+    syncPlanForm();
+    const ds = plDay.dataset.plDay;
+    planSel = ds;
+    if(planClip){
+      (plan.events[ds] = plan.events[ds] || []).push({
+        id:newId(), projectId:planClip.projectId,
+        memberIds:planClip.memberIds.slice(), memo:planClip.memo
+      });
+      savePlan();
+    }
+    refreshWidget('planner'); return;
+  }
   if(e.target.id === 'zipGo'){
     const v = (document.getElementById('zipIn') || {}).value || '';
     openPostcode(v.trim()); return;
@@ -1454,6 +1767,9 @@ grid.addEventListener('keydown', (e) => {
   if(e.target.id === 'todoIn'){ e.preventDefault(); addTodo(); }
   if(e.target.id === 'projIn'){ e.preventDefault(); addProject(); }
   if(e.target.id === 'zipIn'){ e.preventDefault(); openPostcode(e.target.value.trim()); }
+  if(e.target.id === 'plMemo'){ e.preventDefault(); planAdd(); }
+  if(e.target.id === 'plProjIn'){ e.preventDefault(); document.getElementById('plProjAdd').click(); }
+  if(e.target.id === 'plMemIn'){ e.preventDefault(); document.getElementById('plMemAdd').click(); }
 });
 
 /* ── 드래그 이동 ──────────────────────────────────────── */
@@ -1579,6 +1895,8 @@ onAuthStateChanged(auth, async (user) => {
   }catch(e){ setSync('불러오기 실패 — 오프라인?'); }
   records = data.records || {};
   projects = Array.isArray(data.projects) ? data.projects : [];
+  const pl = data.planner || {};
+  plan = {projects: pl.projects || [], members: pl.members || [], events: pl.events || {}};
   const d = data.dashboard;
   if(d && Array.isArray(d.widgets) && d.widgets.length){
     const mg = migrate(d.widgets);
@@ -1590,7 +1908,7 @@ onAuthStateChanged(auth, async (user) => {
   loadMarket();
   loadWeather();
   loadStock();
-  if(gcalReady()) gcalLoadMonth(calY, calM, false);
+  if(gcalReady()) gcalLoadMonth(calY, calM, false).then(() => refreshWidget('planner'));
   clearInterval(window.__clock);
   window.__clock = setInterval(() => {
     const el = document.getElementById('punchClock');
