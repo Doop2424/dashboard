@@ -777,12 +777,38 @@ async function gcalLoadMonth(y, m, interactive){
     if(!r.ok) throw new Error('http-' + r.status);
     const j = await r.json();
     const by = {};
+    const dstr2 = (d) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    const monFrom = dstr2(new Date(y, m, 1));
+    const monTo = dstr2(new Date(y, m+1, 0));
     (j.items || []).forEach(ev => {
-      const st = ev.start || {};
+      const st = ev.start || {}, en = ev.end || {};
       const allDay = !!st.date;
-      const ds = allDay ? st.date : String(st.dateTime).slice(0, 10);
-      const time = allDay ? '종일' : String(st.dateTime).slice(11, 16);
-      (by[ds] = by[ds] || []).push({time, title: ev.summary || '(제목 없음)', allDay, link: ev.htmlLink});
+      const sDs = allDay ? st.date : String(st.dateTime).slice(0, 10);
+      let eDs;
+      if(allDay){
+        // 종일 일정의 end.date 는 '다음 날'이므로 하루 빼야 실제 마지막 날이 된다.
+        const d = new Date(en.date ? en.date + 'T00:00:00' : sDs + 'T00:00:00');
+        if(en.date) d.setDate(d.getDate() - 1);
+        eDs = dstr2(d);
+      }else{
+        eDs = String(en.dateTime || st.dateTime).slice(0, 10);
+      }
+      if(eDs < sDs) eDs = sDs;
+      const cur = new Date(sDs + 'T00:00:00'), last = new Date(eDs + 'T00:00:00');
+      const total = Math.min(Math.round((last - cur) / 86400000) + 1, 90);
+      for(let i = 0; i < total; i++){
+        const ds = dstr2(cur);
+        if(ds >= monFrom && ds <= monTo){
+          const time = total > 1
+            ? `${i + 1}/${total}일`
+            : (allDay ? '종일' : String(st.dateTime).slice(11, 16));
+          (by[ds] = by[ds] || []).push({
+            time, title: ev.summary || '(제목 없음)', allDay,
+            span: total, idx: i + 1, link: ev.htmlLink
+          });
+        }
+        cur.setDate(cur.getDate() + 1);
+      }
     });
     gcal.months[key] = by;
   }catch(e){
