@@ -137,6 +137,10 @@
   .pc.sun{color:var(--tick)} .pc.sat{color:var(--blue)}
   .pc.today{border-color:var(--tick)}
   .pc.sel{background:var(--soft);border-color:var(--blue);box-shadow:inset 0 0 0 1px var(--blue)}
+  .pc.inrange{background:color-mix(in srgb,var(--blue) 14%,transparent);border-color:var(--blue)}
+  .pc{user-select:none}
+  .pldate{font-family:var(--mono);font-size:10px;color:var(--ink3);flex:none;min-width:30px}
+  .cphead{display:flex;align-items:center;gap:10px}
   .pchip{display:block;font-style:normal;font-size:9px;line-height:1.3;color:#fff;border-radius:2px;
          padding:2px 4px;overflow:hidden}
   .pchip b{display:block;font-weight:600;word-break:keep-all;overflow-wrap:anywhere;
@@ -1087,19 +1091,20 @@ const PAL = ['#1D4E89','#B3272D','#1F7A5C','#9A6B12','#6B3F8C','#0F7B8A','#8A5A2
 let plan = {projects:[], members:[], events:{}};
 let planY = new Date().getFullYear(), planM = new Date().getMonth();
 let planSel = null, planClip = null, planCfg = false;
+let planRange = null, planDrag = null;   // 드래그로 고른 날짜 구간
 let planForm = {projectId:'', memberIds:[], memo:''};
 
-let planTimer = null;
+// 일정 계획은 클릭 단위 작업이라 지연 저장하지 않고 즉시 기록한다.
+// (예전에는 0.7초 뒤에 저장해서, 그 사이에 화면을 닫으면 마지막 편집이 사라졌다.)
+let planSaving = null;
 function savePlan(){
-  if(!uid) return;
-  clearTimeout(planTimer);
+  if(!uid) return Promise.resolve();
   setSync('저장 중…');
-  planTimer = setTimeout(async () => {
-    try{
-      await setDoc(doc(db,'worklogs',uid), { planner: plan, updatedAt: serverTimestamp() }, { merge:true });
-      setSync('동기화됨 ✓');
-    }catch(e){ setSync('저장 실패'); toast('일정 계획 저장 실패'); }
-  }, 700);
+  const snapshot = JSON.parse(JSON.stringify(plan));
+  planSaving = setDoc(doc(db,'worklogs',uid), { planner: snapshot, updatedAt: serverTimestamp() }, { merge:true })
+    .then(() => { setSync('동기화됨 ✓'); })
+    .catch(() => { setSync('저장 실패'); toast('일정 계획 저장 실패 — 다시 시도해주세요'); });
+  return planSaving;
 }
 function projOf(id){ return plan.projects.find(x => x.id === id) || null; }
 function memName(id){ const m = plan.members.find(x => x.id === id); return m ? m.name : ''; }
@@ -1108,10 +1113,10 @@ function evOf(ds){ return plan.events[ds] || []; }
 function renderPlanner(){
   const ts = todayStr();
   const first = new Date(planY, planM, 1), startDow = first.getDay();
-  const days = new Date(planY, planM+1, 0).getDate();
+  const lastDay = new Date(planY, planM+1, 0).getDate();
   let cells = '';
   for(let i = 0; i < startDow; i++) cells += `<div class="pc off"></div>`;
-  for(let d = 1; d <= days; d++){
+  for(let d = 1; d <= lastDay; d++){
     const ds = `${planY}-${pad(planM+1)}-${pad(d)}`;
     const dow = new Date(planY, planM, d).getDay();
     let cls = 'pc';
@@ -1119,6 +1124,8 @@ function renderPlanner(){
     if(dow === 6) cls += ' sat';
     if(ds === ts) cls += ' today';
     if(ds === planSel) cls += ' sel';
+    const rd = rangeDays(planRange);
+    if(rd.length > 1 && ds >= rd[0] && ds <= rd[rd.length-1]) cls += ' inrange';
     const gevs = gcalOf(ds);
     const gchips = gevs.slice(0, 2).map(g =>
       `<i class="gchip">${esc(g.title.slice(0, 10))}</i>`).join('');
@@ -1135,10 +1142,15 @@ function renderPlanner(){
     cells += `<div class="${cls}" data-pl-day="${ds}"><b>${d}</b>${gchips}${chips}${more}</div>`;
   }
 
-  const sel = planSel || ts;
-  const list = evOf(sel);
+  const days = curRange();
+  const sel = days[0];
   const [y, m, d] = sel.split('-').map(Number);
   const wd = ['일','월','화','수','목','금','토'][new Date(y, m-1, d).getDay()];
+  const multi = days.length > 1;
+  const lastD = days[days.length-1].split('-').map(Number);
+  const headText = multi
+    ? `${m}월 ${d}일 ~ ${lastD[1]}월 ${lastD[2]}일 · ${days.length}일`
+    : `${m}월 ${d}일 (${wd})${sel === ts ? ' · 오늘' : ''}`;
 
   const cfg = planCfg ? `<div class="plcfg">
       <div class="mhead">프로젝트</div>
@@ -1155,6 +1167,12 @@ function renderPlanner(){
         || '<span class="sub">아직 없습니다</span>'}</div>
       <div class="addtodo"><input id="plMemIn" placeholder="담당자 이름">
         <button id="plMemAdd">추가</button></div>
+      <div class="mhead">초기화</div>
+      <div class="chips">
+        <button class="ebtn" id="plClearMonth">이 달 계획 지우기</button>
+        <button class="ebtn" id="plClearAll">전체 계획 지우기</button>
+      </div>
+      <div class="sub">구글 캘린더에 이미 등록한 일정은 지워지지 않습니다.</div>
     </div>` : '';
 
   return `<div class="plhead">
@@ -1163,6 +1181,7 @@ function renderPlanner(){
       <button class="cnav" data-pl-nav="1">&rarr;</button>
       <button class="cnav" data-pl-nav="0">오늘</button>
       <span class="sp"></span>
+      <span class="sub" style="font-size:11px">날짜를 끌면 여러 날 한 번에</span>
       <button class="cnav go" id="plBulk">이 달 계획 구글 등록</button>
       <button class="cnav${planCfg ? ' on' : ''}" id="plCfg">프로젝트·담당자</button>
     </div>
@@ -1177,19 +1196,27 @@ function renderPlanner(){
     <div class="plgrid">${['일','월','화','수','목','금','토']
       .map((x, i) => `<div class="dow${i === 0 ? ' sun' : i === 6 ? ' sat' : ''}">${x}</div>`).join('')}${cells}</div>
     <div class="calpanel">
-      <div class="cphead">${m}월 ${d}일 (${wd})${sel === ts ? ' · 오늘' : ''}</div>
+      <div class="cphead">${headText}
+        ${multi ? `<button class="cnav" id="plRangeOff">구간 해제</button>` : ''}</div>
       ${(() => {
-        const gevs = gcalOf(sel);
-        if(!gevs.length) return '';
-        return `<div class="mhead">구글 캘린더</div>` + gevs.map(g =>
-          `<div class="li"><span class="t">${esc(g.time)}</span>
-            <span class="x">${esc(g.title)}</span></div>`).join('');
+        const rows = [];
+        days.forEach(ds2 => gcalOf(ds2).forEach(g => rows.push({ds:ds2, g})));
+        if(!rows.length) return '';
+        return `<div class="mhead">구글 캘린더</div>` + rows.map(r =>
+          `<div class="li"><span class="t">${multi ? +r.ds.slice(8) + '일' : esc(r.g.time)}</span>
+            <span class="x">${esc(r.g.title)}</span></div>`).join('');
       })()}
       <div class="mhead">계획</div>
-      ${list.length ? list.map(ev => {
+      ${multi ? `<div class="sub">아래에서 추가하면 선택한 ${days.length}일 전체에 들어갑니다.</div>` : ''}
+      ${(() => {
+        const rows = [];
+        days.forEach(ds2 => (plan.events[ds2] || []).forEach(ev => rows.push({ds:ds2, ev})));
+        if(!rows.length) return `<div class="empty">이 날짜에 잡아둔 일정이 없습니다.</div>`;
+        return rows.map(({ds:ds2, ev}) => {
         const pj = projOf(ev.projectId);
         const who = (ev.memberIds || []).map(memName).filter(Boolean).join(', ');
-        return `<div class="plrow${ev.gcalId ? ' reg' : ''}">
+        return `<div class="plrow${ev.gcalId ? ' reg' : ''}" data-pl-row="${ds2}">
+          ${multi ? `<span class="pldate">${+ds2.slice(8)}일</span>` : ''}
           <i class="pdot" style="background:${pj ? pj.color : '#7A8A9D'}"></i>
           <span class="plname">${esc(pj ? pj.name : '미지정')}</span>
           <span class="plwho">${esc(who)}</span>
@@ -1199,7 +1226,8 @@ function renderPlanner(){
             : `<button class="cnav go" data-pl-gcal="${ev.id}">구글 등록</button>`}
           <button class="cnav" data-pl-copy="${ev.id}">복사</button>
           <button class="del" data-pl-del="${ev.id}">&#10005;</button></div>`;
-      }).join('') : `<div class="empty">이 날짜에 잡아둔 일정이 없습니다.</div>`}
+        }).join('');
+      })()}
       <div class="plform">
         <select id="plProj">
           <option value="">프로젝트 선택</option>
@@ -1213,6 +1241,22 @@ function renderPlanner(){
           <button id="plAdd">일정 추가</button></div>
       </div>
     </div>`;
+}
+function dsAdd(ds, n){
+  const d = new Date(ds + 'T00:00:00'); d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function rangeDays(r){
+  if(!r) return [];
+  const from = r.from <= r.to ? r.from : r.to;
+  const to = r.from <= r.to ? r.to : r.from;
+  const out = []; let cur = from;
+  for(let i = 0; i < 120 && cur <= to; i++){ out.push(cur); cur = dsAdd(cur, 1); }
+  return out;
+}
+function curRange(){
+  const days = rangeDays(planRange);
+  return days.length ? days : [planSel || todayStr()];
 }
 function syncPlanForm(){
   const pj = document.getElementById('plProj');
@@ -1284,14 +1328,17 @@ async function planBulkRegister(){
 
 function planAdd(){
   syncPlanForm();
-  const sel = planSel || todayStr();
   if(!planForm.projectId){ toast('프로젝트를 선택하세요.'); return; }
-  (plan.events[sel] = plan.events[sel] || []).push({
-    id: newId(), projectId: planForm.projectId,
-    memberIds: planForm.memberIds.slice(), memo: planForm.memo
+  const days = curRange();
+  days.forEach(ds => {
+    (plan.events[ds] = plan.events[ds] || []).push({
+      id: newId(), projectId: planForm.projectId,
+      memberIds: planForm.memberIds.slice(), memo: planForm.memo
+    });
   });
   planForm.memo = '';
   savePlan(); refreshWidget('planner');
+  if(days.length > 1) toast(`${days.length}일에 걸쳐 추가했습니다.`);
 }
 
 /* ── 우편번호 찾기 (카카오 우편번호 서비스, 키 불필요) ──── */
@@ -1716,6 +1763,24 @@ grid.addEventListener('click', (e) => {
     return;
   }
   if(e.target.id === 'plBulk'){ planBulkRegister(); return; }
+  if(e.target.id === 'plClearMonth'){
+    const mk = `${planY}-${pad(planM+1)}`;
+    const n = Object.keys(plan.events).filter(ds => ds.slice(0,7) === mk)
+      .reduce((a, ds) => a + plan.events[ds].length, 0);
+    if(!n){ toast('이 달에 잡아둔 계획이 없습니다.'); return; }
+    if(!confirm(`${planY}년 ${planM+1}월 계획 ${n}건을 지울까요? 되돌릴 수 없습니다.`)) return;
+    Object.keys(plan.events).forEach(ds => { if(ds.slice(0,7) === mk) delete plan.events[ds]; });
+    planClip = null;
+    savePlan(); refreshWidget('planner'); return;
+  }
+  if(e.target.id === 'plClearAll'){
+    const n = Object.values(plan.events).reduce((a, v) => a + v.length, 0);
+    if(!n){ toast('잡아둔 계획이 없습니다.'); return; }
+    if(!confirm(`전체 계획 ${n}건을 모두 지울까요? 되돌릴 수 없습니다.`)) return;
+    if(!confirm('정말 전부 지웁니다. 계속할까요?')) return;
+    plan.events = {}; planClip = null;
+    savePlan(); refreshWidget('planner'); return;
+  }
   if(e.target.id === 'plCfg'){ planCfg = !planCfg; refreshWidget('planner'); return; }
   if(e.target.id === 'plClipOff'){ planClip = null; refreshWidget('planner'); return; }
   if(e.target.id === 'plProjAdd'){
@@ -1785,20 +1850,10 @@ grid.addEventListener('click', (e) => {
     if(!plan.events[sel].length) delete plan.events[sel];
     savePlan(); refreshWidget('planner'); return;
   }
-  const plDay = e.target.closest('[data-pl-day]');
-  if(plDay){
-    syncPlanForm();
-    const ds = plDay.dataset.plDay;
-    planSel = ds;
-    if(planClip){
-      (plan.events[ds] = plan.events[ds] || []).push({
-        id:newId(), projectId:planClip.projectId,
-        memberIds:planClip.memberIds.slice(), memo:planClip.memo
-      });
-      savePlan();
-    }
-    refreshWidget('planner'); return;
+  if(e.target.id === 'plRangeOff'){
+    planRange = null; refreshWidget('planner'); return;
   }
+  if(e.target.closest('[data-pl-day]')) return;   // 날짜는 아래 드래그 처리에서 담당
   if(e.target.id === 'zipGo'){
     const v = (document.getElementById('zipIn') || {}).value || '';
     openPostcode(v.trim()); return;
@@ -1932,6 +1987,54 @@ grid.addEventListener('keydown', (e) => {
   if(e.target.id === 'tlUrl'){ e.preventDefault(); document.getElementById('tlAdd').click(); }
   if(e.target.id === 'plProjIn'){ e.preventDefault(); document.getElementById('plProjAdd').click(); }
   if(e.target.id === 'plMemIn'){ e.preventDefault(); document.getElementById('plMemAdd').click(); }
+});
+
+
+/* ── 일정 계획: 날짜를 끌어 구간 선택 ─────────────────── */
+function paintRange(){
+  const days = rangeDays(planRange);
+  const set = days.length > 1 ? new Set(days) : new Set();
+  grid.querySelectorAll('[data-pl-day]').forEach(el => {
+    el.classList.toggle('inrange', set.has(el.dataset.plDay));
+  });
+}
+grid.addEventListener('pointerdown', (e) => {
+  if(editing) return;
+  const cell = e.target.closest('[data-pl-day]');
+  if(!cell) return;
+  e.preventDefault();
+  syncPlanForm();
+  planDrag = {from: cell.dataset.plDay, to: cell.dataset.plDay};
+  planRange = {from: planDrag.from, to: planDrag.to};
+  paintRange();
+});
+grid.addEventListener('pointermove', (e) => {
+  if(!planDrag) return;
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  const cell = el && el.closest ? el.closest('[data-pl-day]') : null;
+  if(cell && cell.dataset.plDay !== planDrag.to){
+    planDrag.to = cell.dataset.plDay;
+    planRange = {from: planDrag.from, to: planDrag.to};
+    paintRange();
+  }
+});
+document.addEventListener('pointerup', () => {
+  if(!planDrag) return;
+  planDrag = null;
+  const days = rangeDays(planRange);
+  planSel = days[0];
+  if(days.length === 1) planRange = null;
+  if(planClip){
+    days.forEach(ds => {
+      (plan.events[ds] = plan.events[ds] || []).push({
+        id:newId(), projectId:planClip.projectId,
+        memberIds:planClip.memberIds.slice(), memo:planClip.memo
+      });
+    });
+    savePlan();
+    if(days.length > 1) toast(`${days.length}일에 붙여넣었습니다.`);
+  }
+  refreshWidget('planner');
 });
 
 /* ── 드래그 이동 ──────────────────────────────────────── */
@@ -2086,6 +2189,20 @@ const now = new Date();
 const wd = ['일','월','화','수','목','금','토'][now.getDay()];
 $('#today').innerHTML =
   `<b>Dashboard</b> &nbsp; ${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())} (${wd})`;
+// 지연 저장(배치·할일·근무시간)이 남아 있는 채로 화면을 떠나지 않도록 즉시 밀어낸다.
+function flushPending(){
+  if(!uid) return;
+  if(layoutTimer){ clearTimeout(layoutTimer); layoutTimer = null;
+    setDoc(doc(db,'worklogs',uid), { dashboard:{version:3, theme, widgets:layout, tools} }, { merge:true }).catch(() => {}); }
+  if(todoTimer){ clearTimeout(todoTimer); todoTimer = null;
+    const ds = todayStr();
+    setDoc(doc(db,'worklogs',uid), { records:{ [ds]:{ todos: todosOf(ds) } } }, { merge:true }).catch(() => {}); }
+  if(projTimer){ clearTimeout(projTimer); projTimer = null;
+    setDoc(doc(db,'worklogs',uid), { projects }, { merge:true }).catch(() => {}); }
+}
+document.addEventListener('visibilitychange', () => { if(document.hidden) flushPending(); });
+window.addEventListener('pagehide', flushPending);
+
 applyTheme();
 </script>
 </body>
