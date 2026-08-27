@@ -444,8 +444,9 @@ const TOOLS_DEFAULT = [
 // 제한하려면 예: ["@sjacc.co.kr", "@gmail.com"]
 const SIGNUP_DOMAINS = [];
 
-// 관리자 계정. 이 이메일로 로그인했을 때만 기본 설정 화면이 보인다.
-const ADMIN_EMAIL = "hong24haha@gmail.com";
+// 관리자 계정. 이 목록에 있는 이메일로 로그인했을 때만 기본 설정 화면이 보인다.
+// 계정을 여러 개 쓰면 전부 적어두면 된다.
+const ADMIN_EMAILS = ["hong24haha@nate.com", "hong24haha@gmail.com"];
 
 // 주가 알림 저장소의 Pages 주소 (끝에 / 포함)
 const STOCK_BASE = "https://doop2424.github.io/stock-alert/";
@@ -2278,7 +2279,7 @@ onAuthStateChanged(auth, async (user) => {
   const pl = data.planner || {};
   plan = {projects: pl.projects || [], members: pl.members || [], events: pl.events || {}};
   const d = data.dashboard;
-  isAdmin = (user.email || '').toLowerCase() === ADMIN_EMAIL.toLowerCase();
+  isAdmin = ADMIN_EMAILS.some(a => a.toLowerCase() === (user.email || '').toLowerCase());
   $('#bAdmin').classList.toggle('hide', !isAdmin);
   await loadDefaults();
 
