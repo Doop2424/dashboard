@@ -120,6 +120,20 @@
            color:var(--ink3);font-size:12.5px;gap:4px;text-align:center}
   .pending .p1{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber)}
   .empty{color:var(--ink3);font-size:13px;padding:6px 0}
+  /* 팀 일정(이번 주) */
+  .ts{display:flex;flex-direction:column;gap:8px;height:100%}
+  .ts .tshead{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink3)}
+  .ts .tshead b{color:var(--ink);font-weight:600}
+  .ts .tshead a{margin-left:auto;color:var(--blue);text-decoration:none;font-size:12px}
+  .ts .tshead a:hover{text-decoration:underline}
+  .ts table{border-collapse:collapse;width:100%;table-layout:fixed;font-size:11.5px}
+  .ts th,.ts td{border:1px solid var(--rule2);height:24px;text-align:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding:0 4px}
+  .ts th{font-weight:600;background:var(--soft)}
+  .ts th.today{box-shadow:inset 0 -3px 0 var(--tick)}
+  .ts th.nm,.ts td.nm{width:66px;text-align:left;font-weight:600}
+  .ts td.nm.me{color:var(--blue)}
+  .ts td.ev{font-weight:600}
+  .ts td.hol{background:color-mix(in srgb,var(--purple) 18%,var(--paper));font-weight:600}
   /* 일정 계획 */
   .plhead{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;margin-bottom:8px}
   .plhead .sp{flex:1}
@@ -416,7 +430,7 @@ import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
          signOut, onAuthStateChanged,
          setPersistence, browserLocalPersistence }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, serverTimestamp }
+import { getFirestore, doc, getDoc, setDoc, serverTimestamp, onSnapshot }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* ═══ 여기 두 곳만 손보면 됩니다 ═══════════════════════════ */
@@ -437,7 +451,8 @@ const TOOLS_DEFAULT = [
   {n:'근무시간 장부',    d:'출퇴근 · 수당',   href:'https://doop2424.github.io/worklog/'},
   {n:'일일 업무 기록부', d:'할일 · 히스토리', href:'https://doop2424.github.io/worklog/todo.html'},
   {n:'메뉴얼 입력 틀',   d:'캡쳐 + 설명',     href:'https://doop2424.github.io/Manual-Create/'},
-  {n:'진행현황 관리',    d:'프로젝트 진행률', href:'https://doop2424.github.io/progress-tracker/'}
+  {n:'진행현황 관리',    d:'프로젝트 진행률', href:'https://doop2424.github.io/progress-tracker/'},
+  {n:'팀 일정표',        d:'인별 감사일정 · 엑셀', href:SCHEDULE_URL}
 ];
 
 // 회원가입을 허용할 이메일 도메인 목록. 비워두면(기본) 누구나 가입할 수 있다.
@@ -447,6 +462,9 @@ const SIGNUP_DOMAINS = [];
 // 관리자 계정. 이 목록에 있는 이메일로 로그인했을 때만 기본 설정 화면이 보인다.
 // 계정을 여러 개 쓰면 전부 적어두면 된다.
 const ADMIN_EMAILS = ["hong24haha@nate.com", "hong24haha@gmail.com"];
+
+// 팀 일정표 페이지 주소. 별도 저장소에 index.html 로 올렸으면 그 Pages 주소를 적는다.
+const SCHEDULE_URL = "https://doop2424.github.io/team-schedule/";
 
 // 주가 알림 저장소의 Pages 주소 (끝에 / 포함)
 const STOCK_BASE = "https://doop2424.github.io/stock-alert/";
@@ -511,6 +529,7 @@ const CAT = [
   {id:'stretch',       n:'스트레칭 알림',     g:'기타', w:3, h:160},
   {id:'stock',         n:'주가 알림',         g:'시장', w:4, h:320},
   {id:'planner',       n:'일정 계획',         g:'업무', w:12, h:560},
+  {id:'teamsched',     n:'팀 일정 (이번 주)',  g:'업무', w:12, h:330},
   {id:'zipcode',       n:'우편번호 찾기',     g:'기타', w:4, h:340},
   {id:'english',       n:'오늘의 생활영어',   g:'기타', w:5, h:320},
   {id:'launcher',      n:'유틸리티',          g:'기타', w:12, h:150},
@@ -1600,12 +1619,62 @@ function renderEnglish(){
         <div class="eko">${esc(e[1])}</div></div></div>`).join('');
 }
 
+/* ── 팀 일정 (이번 주) ── schedule.html 과 같은 문서 config/schedule 을 읽기만 한다. */
+let ts = null, tsUnsub = null, tsErr = '';
+const TS_PAL = ['#1D4E89','#B3272D','#1F7A5C','#9A6B12','#6B3F8C','#0F7B8A','#8A5A2B','#C0504D',
+                '#4F81BD','#9BBB59','#8064A2','#F79646','#2C7A7B','#D2691E','#556B2F','#3F51B5','#A0522D','#00838F','#6D4C41','#7B1FA2'];
+function tsColor(p){
+  if(ts && ts.colors && ts.colors[p]) return ts.colors[p];
+  let h = 0; for(const c of p) h = (h * 31 + c.charCodeAt(0)) | 0;
+  return TS_PAL[Math.abs(h) % TS_PAL.length];
+}
+function tsFg(hex){ const n = parseInt(hex.slice(1), 16); return ((n>>16&255)*299 + (n>>8&255)*587 + (n&255)*114)/1000 > 165 ? '#1A2432' : '#fff'; }
+function loadTeamSched(){
+  if(tsUnsub || !uid) return;
+  tsUnsub = onSnapshot(doc(db,'config','schedule'), snap => {
+    ts = snap.exists() ? snap.data() : {members:[], events:{}, colors:{}, holidays:{}};
+    tsErr = ''; refreshWidget('teamsched');
+  }, e => { tsErr = e.code; refreshWidget('teamsched'); });
+}
+function renderTeamSched(){
+  if(tsErr) return `<div class="empty">팀 일정을 불러오지 못했습니다 (${esc(tsErr)}). Firestore 규칙에서 config/schedule 읽기 권한을 확인하세요.</div>`;
+  if(!ts) return `<div class="empty">불러오는 중…</div>`;
+  const members = ts.members || [];
+  if(!members.length) return `<div class="empty">아직 일정이 없습니다. <a href="${SCHEDULE_URL}" target="_blank" rel="noopener" style="color:var(--blue)">팀 일정표</a>에서 엑셀을 가져오세요.</div>`;
+  const off = Number(localStorage.getItem('dash.tsWeek') || 0);
+  const base = new Date(); base.setDate(base.getDate() - base.getDay() + off * 7);
+  const wk = []; for(let i = 0; i < 7; i++){ const d = new Date(base); d.setDate(base.getDate() + i); wk.push(dstr(d)); }
+  const me = localStorage.getItem('sch.me') || '';
+  const WD = ['일','월','화','수','목','금','토'];
+  const tstr = todayStr();
+  const ev = ts.events || {}, hol = ts.holidays || {};
+  const rows = members.map(m => `<tr><td class="nm${m === me ? ' me' : ''}">${esc(m)}</td>` + wk.map(ds => {
+    if(hol[ds]) return `<td class="hol" title="${esc(hol[ds])}">${esc(hol[ds])}</td>`;
+    const p = (ev[ds] || {})[m] || '';
+    if(!p) return `<td></td>`;
+    const c = tsColor(p);
+    return `<td class="ev" style="background:${c};color:${tsFg(c)}" title="${esc(p)}">${esc(p)}</td>`;
+  }).join('') + '</tr>').join('');
+  return `<div class="ts">
+    <div class="tshead"><button class="cnav" data-ts="-1">&lsaquo;</button><b>${wk[0]} ~ ${wk[6]}</b><button class="cnav" data-ts="1">&rsaquo;</button>
+      ${off ? '<button class="cnav" data-ts="0">이번 주</button>' : ''}
+      <a href="${SCHEDULE_URL}" target="_blank" rel="noopener">일정표 열기 · 편집 · 엑셀</a></div>
+    <div style="flex:1;overflow:auto"><table><tr><th class="nm">인원</th>${wk.map((ds, i) =>
+      `<th class="${ds === tstr ? 'today' : ''}">${ds.slice(5)} (${WD[i]})</th>`).join('')}</tr>${rows}</table></div></div>`;
+}
+grid.addEventListener('click', e => {
+  const b = e.target.closest('[data-ts]'); if(!b) return;
+  const v = Number(b.dataset.ts);
+  localStorage.setItem('dash.tsWeek', v === 0 ? 0 : Number(localStorage.getItem('dash.tsWeek') || 0) + v);
+  refreshWidget('teamsched');
+});
+
 const RENDER = {
   'worklog-entry': renderTodos, 'worktime': renderWorktime,
   'carryover': renderCarryover, 'week': renderWeek, 'launcher': renderLauncher,
   'projects': renderProjects, 'punch': renderPunch, 'minical': renderMinical,
   'market': renderMarket, 'weather': renderWeather, 'quote': renderQuote,
-  'stretch': renderStretch, 'english': renderEnglish, 'stock': renderStock, 'zipcode': renderZip, 'planner': renderPlanner
+  'stretch': renderStretch, 'english': renderEnglish, 'stock': renderStock, 'zipcode': renderZip, 'planner': renderPlanner, 'teamsched': renderTeamSched
 };
 function renderCustom(item){
   const note = item.note || '';
@@ -2256,6 +2325,7 @@ onAuthStateChanged(auth, async (user) => {
     $('#bOut').classList.add('hide');
     $('#who').textContent = ''; setSync('');
     isAdmin = false; adminOpen = false;
+    if(tsUnsub){ tsUnsub(); tsUnsub = null; ts = null; }
     $('#bAdmin').classList.add('hide');
     $('#admin').innerHTML = ''; $('#admin').classList.remove('open');
     setEdit(false);
@@ -2299,6 +2369,7 @@ onAuthStateChanged(auth, async (user) => {
     layout = layout.filter(w => !defaults.hidden.includes(w.id));
   }
   build();
+  loadTeamSched();
   loadMarket();
   loadWeather();
   loadStock();
