@@ -2338,7 +2338,22 @@ $('#pw').addEventListener('keydown', e => { if(e.key === 'Enter') login(); });
 $('#em').addEventListener('keydown', e => { if(e.key === 'Enter') $('#pw').focus(); });
 $('#bOut').onclick = () => signOut(auth);
 
-onAuthStateChanged(auth, async (user) => {
+/* 같은 출처(doop2424.github.io)의 다른 앱(팀 일정표·장부 등)이 새 탭에서 열리며 토큰을 갱신하면
+   이 탭의 인증 상태가 잠깐 null → user 로 흔들린다. 그때마다 로그인 화면이 뜨고 문서를 다시 읽는 걸 막기 위해
+   로그아웃은 2초 동안 유지될 때만 처리하고, 같은 계정이 이미 로드된 상태면 다시 읽지 않는다. */
+let logoutTimer = null;
+onAuthStateChanged(auth, (user) => {
+  if(!user){
+    if(!uid) { handleAuth(null); return; }            // 처음부터 비로그인 상태
+    clearTimeout(logoutTimer);
+    logoutTimer = setTimeout(() => { logoutTimer = null; if(!auth.currentUser) handleAuth(null); }, 2000);
+    return;
+  }
+  if(logoutTimer){ clearTimeout(logoutTimer); logoutTimer = null; }
+  if(user.uid === uid && loaded) return;             // 같은 계정, 이미 로드됨 → 무시
+  handleAuth(user);
+});
+async function handleAuth(user){
   if(!user){
     uid = null; records = {}; loaded = false; backupInfo = null;
     $('#bReload').classList.add('hide'); $('#bRestore').classList.add('hide');
@@ -2412,7 +2427,7 @@ onAuthStateChanged(auth, async (user) => {
     const n = new Date();
     el.innerHTML = `${pad(n.getHours())}:${pad(n.getMinutes())}<span>:${pad(n.getSeconds())}</span>`;
   }, 1000);
-});
+}
 
 /* ── 백업·복원 ─────────────────────────────────────────── */
 // 로그인 직후: 비어 있지 않은 항목만 backup 필드에 보관하고, 백업은 있는데 현재 값이 비었으면 복원을 제안한다.
