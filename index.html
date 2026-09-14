@@ -387,6 +387,8 @@
   <span class="seg" id="segTheme">
     <button data-th="system">시스템</button><button data-th="light">기본</button><button data-th="dark">다크</button>
   </span>
+  <button class="btn hide" id="bReload">다시 불러오기</button>
+  <button class="btn hide" id="bRestore" title="로그인 때 자동 저장된 백업으로 되돌립니다">백업 복원</button>
   <button class="btn hide" id="bEdit">배치 편집</button>
   <button class="btn hide" id="bOut">로그아웃</button>
 </header>
@@ -430,7 +432,8 @@ import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
          signOut, onAuthStateChanged,
          setPersistence, browserLocalPersistence }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, serverTimestamp, onSnapshot }
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+         doc, getDoc, setDoc, serverTimestamp, onSnapshot }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* ═══ 여기 두 곳만 손보면 됩니다 ═══════════════════════════ */
@@ -477,7 +480,26 @@ const GOOGLE_CLIENT_ID = "829279277226-n4h7jq947cthvevifa7cfbhjnev7sapr.apps.goo
 
 const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
-const db = getFirestore(app);
+// 오프라인 캐시: 네트워크가 불안정해도 마지막 데이터를 읽어 "빈 데이터로 시작 → 덮어쓰기" 사고를 줄인다.
+let db;
+try{ db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) }); }
+catch(e){ db = getFirestore(app); }
+
+/* ── 데이터 보호 ─────────────────────────────────────────
+   loaded  : 서버에서 내 문서를 정상적으로 읽었을 때만 true. false면 모든 저장을 막는다.
+   writer(): 저장마다 누가(어느 앱·기기) 썼는지 lastWriter 필드로 남겨, 데이터가 사라졌을 때 콘솔에서 추적한다.
+   backup  : 로그인 때 비어 있지 않은 projects·tools·planner 를 backup 필드에 한 벌 보관한다(빈 값으로는 덮지 않음). */
+let loaded = false, backupInfo = null;
+const APP_TAG = 'dashboard';
+function writer(kind){
+  return { lastWriter:{ app:APP_TAG, kind, at:Date.now(), ua:navigator.userAgent.slice(0,140),
+                        url:location.href, loaded } };
+}
+function canSave(what){
+  if(!uid) return false;
+  if(!loaded){ toast(`데이터를 불러오지 못한 상태라 ${what} 저장을 막았습니다 — 「다시 불러오기」를 눌러주세요.`); return false; }
+  return true;
+}
 
 const $ = (s) => document.querySelector(s);
 const toastEl = $('#toast'), grid = $('#grid'), picker = $('#picker');
@@ -607,23 +629,23 @@ function minutesOf(r){
 /* ── 저장 ─────────────────────────────────────────────── */
 let layoutTimer = null, todoTimer = null;
 function saveLayout(){
-  if(!uid) return;
+  if(!canSave('배치')) return;
   clearTimeout(layoutTimer);
   layoutTimer = setTimeout(async () => {
     try{
       await setDoc(doc(db,'worklogs',uid),
-        { dashboard:{version:3, theme, widgets:layout, tools} }, { merge:true });
+        { dashboard:{version:3, theme, widgets:layout, tools}, ...writer('layout') }, { merge:true });
     }catch(e){ toast('배치 저장 실패: ' + e.code); }
   }, 700);
 }
 function saveTodos(ds){
-  if(!uid) return;
+  if(!canSave('할일')) return;
   clearTimeout(todoTimer);
   setSync('저장 중…');
   todoTimer = setTimeout(async () => {
     try{
       await setDoc(doc(db,'worklogs',uid),
-        { records:{ [ds]:{ todos: todosOf(ds) } }, updatedAt: serverTimestamp() },
+        { records:{ [ds]:{ todos: todosOf(ds) } }, updatedAt: serverTimestamp(), ...writer('todos') },
         { merge:true });
       setSync('동기화됨 ✓');
     }catch(e){ setSync('저장 실패'); toast('저장 실패 — 다시 시도해주세요'); }
@@ -636,20 +658,20 @@ function ensure(ds){
 }
 let projTimer = null;
 function saveProjects(){
-  if(!uid) return;
+  if(!canSave('업무 현황')) return;
   clearTimeout(projTimer);
   setSync('저장 중…');
   projTimer = setTimeout(async () => {
     try{
       await setDoc(doc(db,'worklogs',uid),
-        { projects, updatedAt: serverTimestamp() }, { merge:true });
+        { projects, updatedAt: serverTimestamp(), ...writer('projects') }, { merge:true });
       setSync('동기화됨 ✓');
     }catch(e){ setSync('저장 실패'); toast('업무 현황 저장 실패'); }
   }, 700);
 }
 let punchTimer = null;
 function savePunch(ds){
-  if(!uid) return;
+  if(!canSave('근무시간')) return;
   clearTimeout(punchTimer);
   setSync('저장 중…');
   const r = records[ds] || {};
@@ -659,7 +681,7 @@ function savePunch(ds){
   punchTimer = setTimeout(async () => {
     try{
       await setDoc(doc(db,'worklogs',uid),
-        { records:{ [ds]: payload }, updatedAt: serverTimestamp() }, { merge:true });
+        { records:{ [ds]: payload }, updatedAt: serverTimestamp(), ...writer('punch') }, { merge:true });
       setSync('동기화됨 ✓');
     }catch(e){ setSync('저장 실패'); toast('근무시간 저장 실패'); }
   }, 500);
@@ -1135,10 +1157,10 @@ let planForm = {projectId:'', memberIds:[], memo:''};
 // (예전에는 0.7초 뒤에 저장해서, 그 사이에 화면을 닫으면 마지막 편집이 사라졌다.)
 let planSaving = null;
 function savePlan(){
-  if(!uid) return Promise.resolve();
+  if(!canSave('일정 계획')) return Promise.resolve();
   setSync('저장 중…');
   const snapshot = JSON.parse(JSON.stringify(plan));
-  planSaving = setDoc(doc(db,'worklogs',uid), { planner: snapshot, updatedAt: serverTimestamp() }, { merge:true })
+  planSaving = setDoc(doc(db,'worklogs',uid), { planner: snapshot, updatedAt: serverTimestamp(), ...writer('planner') }, { merge:true })
     .then(() => { setSync('동기화됨 ✓'); })
     .catch(() => { setSync('저장 실패'); toast('일정 계획 저장 실패 — 다시 시도해주세요'); });
   return planSaving;
@@ -2318,7 +2340,8 @@ $('#bOut').onclick = () => signOut(auth);
 
 onAuthStateChanged(auth, async (user) => {
   if(!user){
-    uid = null; records = {};
+    uid = null; records = {}; loaded = false; backupInfo = null;
+    $('#bReload').classList.add('hide'); $('#bRestore').classList.add('hide');
     $('#login').classList.remove('hide');
     $('#app').classList.add('hide');
     $('#bEdit').classList.add('hide');
@@ -2339,11 +2362,18 @@ onAuthStateChanged(auth, async (user) => {
   $('#who').textContent = user.email;
   setSync('불러오는 중…');
   let data = {};
+  loaded = false;
   try{
     const snap = await getDoc(doc(db,'worklogs',uid));
     data = snap.exists() ? snap.data() : {};
+    loaded = true;
     setSync('동기화됨 ✓');
-  }catch(e){ setSync('불러오기 실패 — 오프라인?'); }
+    $('#bReload').classList.add('hide');
+  }catch(e){
+    setSync('불러오기 실패 — 저장이 잠겼습니다');
+    $('#bReload').classList.remove('hide');
+    toast('데이터를 불러오지 못했습니다. 기존 데이터 보호를 위해 저장을 막습니다.');
+  }
   records = data.records || {};
   projects = Array.isArray(data.projects) ? data.projects : [];
   const pl = data.planner || {};
@@ -2369,6 +2399,7 @@ onAuthStateChanged(auth, async (user) => {
     layout = layout.filter(w => !defaults.hidden.includes(w.id));
   }
   build();
+  guardAndBackup(data, d, pl);
   loadTeamSched();
   loadMarket();
   loadWeather();
@@ -2383,6 +2414,57 @@ onAuthStateChanged(auth, async (user) => {
   }, 1000);
 });
 
+/* ── 백업·복원 ─────────────────────────────────────────── */
+// 로그인 직후: 비어 있지 않은 항목만 backup 필드에 보관하고, 백업은 있는데 현재 값이 비었으면 복원을 제안한다.
+function guardAndBackup(data, d, pl){
+  if(!loaded) return;
+  const prev = data.backup || {};
+  const curTools = (d && Array.isArray(d.tools) && d.tools.length) ? d.tools : null;
+  const bk = {};
+  if(projects.length) bk.projects = JSON.parse(JSON.stringify(projects));
+  if(curTools) bk.tools = JSON.parse(JSON.stringify(curTools));
+  if((pl.projects || []).length || Object.keys(pl.events || {}).length) bk.planner = JSON.parse(JSON.stringify(pl));
+  backupInfo = Object.assign({}, prev, bk);
+  if(Object.keys(bk).length){
+    bk.at = Date.now();
+    backupInfo.at = bk.at;
+    setDoc(doc(db,'worklogs',uid), { backup: bk }, { merge:true }).catch(() => {});
+  }
+  $('#bRestore').classList.toggle('hide', !Object.keys(backupInfo).filter(k => k !== 'at').length);
+
+  // 사라진 것 감지: 백업엔 있는데 지금은 비어 있음
+  const lost = [];
+  if((prev.projects || []).length && !projects.length) lost.push(`업무 현황 ${prev.projects.length}건`);
+  if((prev.tools || []).length && !curTools) lost.push(`유틸리티 ${prev.tools.length}개`);
+  if(lost.length){
+    const lw = data.lastWriter ? `\n마지막 저장: ${data.lastWriter.app || '?'} / ${data.lastWriter.kind || ''} / ${new Date(data.lastWriter.at || 0).toLocaleString()}` : '';
+    console.warn('[dashboard] 데이터 유실 감지', {lost, lastWriter: data.lastWriter});
+    if(confirm(`${lost.join(', ')}이(가) 사라진 것으로 보입니다.${lw}\n\n${prev.at ? new Date(prev.at).toLocaleString() + ' ' : ''}백업으로 복원할까요?`)) restoreBackup(true);
+  }
+}
+async function restoreBackup(silent){
+  if(!uid || !backupInfo) { toast('복원할 백업이 없습니다.'); return; }
+  const b = backupInfo;
+  if(!silent){
+    const when = b.at ? new Date(b.at).toLocaleString() : '(시각 미상)';
+    if(!confirm(`${when} 백업으로 되돌립니다.\n업무 현황 ${(b.projects || []).length}건 · 유틸리티 ${(b.tools || []).length}개 · 일정 계획 ${b.planner ? '있음' : '없음'}\n\n현재 내용은 덮어씌워집니다. 진행할까요?`)) return;
+  }
+  if(Array.isArray(b.projects) && b.projects.length) projects = JSON.parse(JSON.stringify(b.projects));
+  if(Array.isArray(b.tools) && b.tools.length) tools = JSON.parse(JSON.stringify(b.tools));
+  if(b.planner) plan = {projects: b.planner.projects || [], members: b.planner.members || [], events: b.planner.events || {}};
+  loaded = true;
+  setSync('복원 중…');
+  try{
+    await setDoc(doc(db,'worklogs',uid),
+      { projects, planner: JSON.parse(JSON.stringify(plan)), dashboard:{version:3, theme, widgets:layout, tools},
+        updatedAt: serverTimestamp(), ...writer('restore') }, { merge:true });
+    setSync('동기화됨 ✓'); toast('백업에서 복원했습니다.');
+  }catch(e){ setSync('저장 실패'); toast('복원 저장 실패: ' + (e.code || e.message)); }
+  build();
+}
+$('#bRestore').onclick = () => restoreBackup(false);
+$('#bReload').onclick = () => location.reload();
+
 /* ── 시작 ─────────────────────────────────────────────── */
 const now = new Date();
 const wd = ['일','월','화','수','목','금','토'][now.getDay()];
@@ -2390,14 +2472,14 @@ $('#today').innerHTML =
   `<b>Dashboard</b> &nbsp; ${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())} (${wd})`;
 // 지연 저장(배치·할일·근무시간)이 남아 있는 채로 화면을 떠나지 않도록 즉시 밀어낸다.
 function flushPending(){
-  if(!uid) return;
+  if(!uid || !loaded) return;
   if(layoutTimer){ clearTimeout(layoutTimer); layoutTimer = null;
-    setDoc(doc(db,'worklogs',uid), { dashboard:{version:3, theme, widgets:layout, tools} }, { merge:true }).catch(() => {}); }
+    setDoc(doc(db,'worklogs',uid), { dashboard:{version:3, theme, widgets:layout, tools}, ...writer('layout-flush') }, { merge:true }).catch(() => {}); }
   if(todoTimer){ clearTimeout(todoTimer); todoTimer = null;
     const ds = todayStr();
-    setDoc(doc(db,'worklogs',uid), { records:{ [ds]:{ todos: todosOf(ds) } } }, { merge:true }).catch(() => {}); }
+    setDoc(doc(db,'worklogs',uid), { records:{ [ds]:{ todos: todosOf(ds) } }, ...writer('todos-flush') }, { merge:true }).catch(() => {}); }
   if(projTimer){ clearTimeout(projTimer); projTimer = null;
-    setDoc(doc(db,'worklogs',uid), { projects }, { merge:true }).catch(() => {}); }
+    setDoc(doc(db,'worklogs',uid), { projects, ...writer('projects-flush') }, { merge:true }).catch(() => {}); }
 }
 document.addEventListener('visibilitychange', () => { if(document.hidden) flushPending(); });
 window.addEventListener('pagehide', flushPending);
