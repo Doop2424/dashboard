@@ -2438,6 +2438,7 @@ function guardAndBackup(data, d, pl){
   const bk = {};
   if(projects.length) bk.projects = JSON.parse(JSON.stringify(projects));
   if(curTools) bk.tools = JSON.parse(JSON.stringify(curTools));
+  if(d && Array.isArray(d.widgets) && d.widgets.length) bk.widgets = JSON.parse(JSON.stringify(d.widgets));
   if((pl.projects || []).length || Object.keys(pl.events || {}).length) bk.planner = JSON.parse(JSON.stringify(pl));
   backupInfo = Object.assign({}, prev, bk);
   if(Object.keys(bk).length){
@@ -2451,6 +2452,7 @@ function guardAndBackup(data, d, pl){
   const lost = [];
   if((prev.projects || []).length && !projects.length) lost.push(`업무 현황 ${prev.projects.length}건`);
   if((prev.tools || []).length && !curTools) lost.push(`유틸리티 ${prev.tools.length}개`);
+  if((prev.widgets || []).length && !(d && Array.isArray(d.widgets) && d.widgets.length)) lost.push('위젯 배치');
   if(lost.length){
     const lw = data.lastWriter ? `\n마지막 저장: ${data.lastWriter.app || '?'} / ${data.lastWriter.kind || ''} / ${new Date(data.lastWriter.at || 0).toLocaleString()}` : '';
     console.warn('[dashboard] 데이터 유실 감지', {lost, lastWriter: data.lastWriter});
@@ -2462,10 +2464,11 @@ async function restoreBackup(silent){
   const b = backupInfo;
   if(!silent){
     const when = b.at ? new Date(b.at).toLocaleString() : '(시각 미상)';
-    if(!confirm(`${when} 백업으로 되돌립니다.\n업무 현황 ${(b.projects || []).length}건 · 유틸리티 ${(b.tools || []).length}개 · 일정 계획 ${b.planner ? '있음' : '없음'}\n\n현재 내용은 덮어씌워집니다. 진행할까요?`)) return;
+    if(!confirm(`${when} 백업으로 되돌립니다.\n업무 현황 ${(b.projects || []).length}건 · 유틸리티 ${(b.tools || []).length}개 · 위젯 배치 ${b.widgets ? '있음' : '없음'} · 일정 계획 ${b.planner ? '있음' : '없음'}\n\n현재 내용은 덮어씌워집니다. 진행할까요?`)) return;
   }
   if(Array.isArray(b.projects) && b.projects.length) projects = JSON.parse(JSON.stringify(b.projects));
   if(Array.isArray(b.tools) && b.tools.length) tools = JSON.parse(JSON.stringify(b.tools));
+  if(Array.isArray(b.widgets) && b.widgets.length) layout = migrate(JSON.parse(JSON.stringify(b.widgets))).list;
   if(b.planner) plan = {projects: b.planner.projects || [], members: b.planner.members || [], events: b.planner.events || {}};
   loaded = true;
   setSync('복원 중…');
